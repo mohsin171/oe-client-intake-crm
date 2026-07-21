@@ -20,6 +20,7 @@
   var accent = "#4592DC";
   var firmName = "";
   var greeting = "Hi, how can I help today?";
+  var tz = "Europe/London";
 
   // ---- styles (scoped with a unique prefix to avoid clashing) --------------
   var css = `
@@ -197,8 +198,8 @@
     var wrap = el("div", "oe-w-slots");
     slots.forEach(function (iso) {
       var d = new Date(iso);
-      var label = d.toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" }) +
-        ", " + d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+      var label = d.toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short", timeZone: tz }) +
+        ", " + d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit", timeZone: tz });
       var b = el("button", "oe-w-slot", esc(label));
       b.onclick = function () { chooseSlot(iso, wrap, b); };
       wrap.appendChild(b);
@@ -245,6 +246,7 @@
       if (cfg.accent) accent = cfg.accent;
       if (cfg.firmName) firmName = cfg.firmName;
       if (cfg.greeting) greeting = cfg.greeting;
+      if (cfg.timezone) tz = cfg.timezone;
     })
     .catch(function () {})
     .finally(build);

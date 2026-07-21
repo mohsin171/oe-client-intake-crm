@@ -7,5 +7,6 @@ export default function handler(req, res) {
     firmName: CONFIG.firm.name,
     accent: CONFIG.widget.accent,
     greeting: CONFIG.widget.greeting,
+    timezone: (CONFIG.firm.availability && CONFIG.firm.availability.timezone) || "Europe/London",
   });
 }

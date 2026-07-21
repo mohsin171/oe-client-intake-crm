@@ -343,6 +343,21 @@ export async function getAvailableSlots(firmId, opts = {}) {
   };
   const workingDays = opts.workingDays || av.workingDays || 8;   // span this many OPEN days
   const perDay = opts.perDay || av.perDay || 2;                  // offer up to this many times per day
+  const tz = av.timezone || "Europe/London";
+
+  // Given a Y/M/D and a wall-clock hour:minute in timezone `tz`, return the
+  // exact UTC Date for that local time (handles BST/GMT correctly).
+  function zonedTime(year, month, dayOfMonth, hour, minute) {
+    // start from the naive UTC guess, then correct by the zone's offset that day
+    const guess = new Date(Date.UTC(year, month, dayOfMonth, hour, minute, 0));
+    const asStr = guess.toLocaleString("en-US", { timeZone: tz });
+    const diff = guess.getTime() - new Date(asStr).getTime();
+    return new Date(guess.getTime() + diff);
+  }
+  // Which weekday (0=Sun..6=Sat) a date falls on in tz
+  function zonedDow(date) {
+    return new Date(date.toLocaleString("en-US", { timeZone: tz })).getDay();
+  }
 
   // pull already-booked slot times so we can exclude them
   const { rows: taken } = await pool.query(
@@ -354,39 +369,36 @@ export async function getAvailableSlots(firmId, opts = {}) {
   const slots = [];
   const now = new Date();
   const earliest = now.getTime() + (av.minNoticeHours || 2) * 3600 * 1000;
-  const day = new Date(now);
-  day.setHours(0, 0, 0, 0);
 
   let openDaysSeen = 0;
-  // walk forward day by day; stop once we've covered `workingDays` open days
   for (let d = 0; d <= 60 && openDaysSeen < workingDays; d++) {
-    const cur = new Date(day);
-    cur.setDate(day.getDate() + d);
-    const hoursForDay = (av.days && av.days[cur.getDay()]) || null;
-    if (!hoursForDay || hoursForDay.length === 0) continue; // firm closed this weekday
+    const base = new Date(now.getTime() + d * 86400000);
+    // the calendar date, as seen in the firm's timezone
+    const parts = new Intl.DateTimeFormat("en-CA", { timeZone: tz, year: "numeric", month: "2-digit", day: "2-digit" })
+      .formatToParts(base).reduce((a, p) => (a[p.type] = p.value, a), {});
+    const year = +parts.year, month = +parts.month - 1, dom = +parts.day;
+    const dow = zonedDow(base);
+    const hoursForDay = (av.days && av.days[dow]) || null;
+    if (!hoursForDay || hoursForDay.length === 0) continue;
 
-    // build this day's still-available times
     const dayTimes = [];
     for (const h of hoursForDay) {
-      const slot = new Date(cur);
       const whole = Math.floor(h);
       const mins = Math.round((h - whole) * 60);
-      slot.setHours(whole, mins, 0, 0);
+      const slot = zonedTime(year, month, dom, whole, mins);
       if (slot.getTime() < earliest) continue;
       if (takenSet.has(slot.getTime())) continue;
       dayTimes.push(slot.toISOString());
     }
-    if (dayTimes.length === 0) continue; // fully past/booked today, not an "open day" offer
+    if (dayTimes.length === 0) continue;
     openDaysSeen++;
 
-    // spread: offer up to `perDay` times, picking across the day (first, mid, last)
     if (dayTimes.length <= perDay) {
       dayTimes.forEach((t) => slots.push(t));
     } else {
       const picks = new Set();
-      picks.add(0);                              // earliest
-      picks.add(dayTimes.length - 1);            // latest
-      // fill the middle if perDay > 2
+      picks.add(0);
+      picks.add(dayTimes.length - 1);
       for (let i = 1; picks.size < perDay && i < dayTimes.length; i++) {
         picks.add(Math.round((i * (dayTimes.length - 1)) / perDay));
       }
