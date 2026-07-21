@@ -99,7 +99,8 @@ export default function Dashboard() {
       <div className="bg-glow bg-glow-1" />
       <div className="bg-glow bg-glow-2" />
       <Sidebar firm={firm} stageCounts={stageCounts} needsAttention={needsAttention.length} total={leads.length}
-        activeFilter={filter} onStage={(k) => applyFilter({ type: 'stage', value: k })} />
+        activeFilter={filter} onStage={(k) => applyFilter({ type: 'stage', value: k })}
+        onHome={() => { setActiveTab('overview'); setFilter(null); setSelectedId(null) }} />
       <div className="workspace">
         <TopNav lastUpdated={lastUpdated} flash={flash} activeTab={activeTab} onTab={(t) => { setActiveTab(t); setFilter(null) }} />
         <main className="main" key={activeTab}>
@@ -164,7 +165,7 @@ export default function Dashboard() {
   )
 }
 
-function Sidebar({ firm, stageCounts, needsAttention, total, activeFilter, onStage }) {
+function Sidebar({ firm, stageCounts, needsAttention, total, activeFilter, onStage, onHome }) {
   const items = [
     { key: 'new', label: 'New', dot: 'new' },
     { key: 'qualified', label: 'Qualified', dot: 'qualified' },
@@ -175,13 +176,13 @@ function Sidebar({ firm, stageCounts, needsAttention, total, activeFilter, onSta
   const isActive = (k) => activeFilter && activeFilter.type === 'stage' && activeFilter.value === k
   return (
     <aside className="sidebar">
-      <div className="brand">
+      <button className="brand brand-home" onClick={onHome} title="Back to overview">
         <div className="brand-mark">◆</div>
         <div className="brand-text">
           <div className="brand-name">{firm || 'Rivergate'}</div>
           <div className="brand-sub">Intake OS</div>
         </div>
-      </div>
+      </button>
 
       <div className="side-section">
         <div className="side-label">Pipeline</div>

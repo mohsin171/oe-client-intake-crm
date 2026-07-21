@@ -382,3 +382,7 @@ h1, h2, h3, .brand-name { font-family: 'Quicksand', 'Nunito Sans', sans-serif; }
 }
 /* live badge glows gently, always */
 .live-badge { box-shadow: 0 0 16px rgba(46,158,107,0.15); }
+
+/* Brand logo is a clickable "home" control */
+.brand-home { width: 100%; border: none; background: none; font-family: inherit; cursor: pointer; text-align: left; border-radius: 12px; transition: background 0.15s; }
+.brand-home:hover { background: var(--light); }
