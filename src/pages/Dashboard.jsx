@@ -176,7 +176,14 @@ function Sidebar({ firm, stageCounts, needsAttention, total, activeFilter, onSta
     <aside className="sidebar">
       <div className="sidebar-inner">
       <button className="brand brand-home" onClick={onHome} title="Back to overview">
-        <div className="brand-mark">◆</div>
+        <div className="brand-mark">
+          <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Rivergate Mortgages">
+            <path d="M16 4.5 L27 13 V27 H20 V19.5 H12 V27 H5 V13 Z" fill="#fff" fillOpacity="0.95"/>
+            <path d="M16 4.5 L27 13" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M16 4.5 L5 13" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+            <rect x="14" y="19.5" width="4" height="7.5" fill="#3875AE"/>
+          </svg>
+        </div>
         <div className="brand-text">
           <div className="brand-name">{firm || 'Rivergate'}</div>
           <div className="brand-sub">Intake OS</div>
