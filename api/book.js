@@ -36,7 +36,7 @@ export default async function handler(req, res) {
     const firmId = CONFIG.firm.id;
 
     if (req.method === "GET") {
-      const slots = await getAvailableSlots(firmId);
+      const slots = await getAvailableSlots(firmId, { availability: CONFIG.firm.availability });
       return res.status(200).json({ slots, bookingType: CONFIG.firm.bookingType });
     }
 

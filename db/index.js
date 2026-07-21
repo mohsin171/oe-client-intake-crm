@@ -334,7 +334,15 @@ export async function applyRetention(firmId, { days = 365 } = {}) {
 // Business hours, weekdays only, on the hour, skipping already-booked slots
 // and anything less than ~2 hours away. Self-contained (no external calendar);
 // real Google/Outlook sync attaches at client onboarding.
-export async function getAvailableSlots(firmId, { count = 6, hours = [10, 12, 14, 16] } = {}) {
+export async function getAvailableSlots(firmId, opts = {}) {
+  const count = opts.count || 6;
+  // availability comes from the firm config (passed by the engine). Sensible
+  // fallback if not provided.
+  const av = opts.availability || {
+    days: { 1:[10,12,14,16], 2:[10,12,14,16], 3:[10,12,14,16], 4:[10,12,14,16], 5:[10,12,14,16] },
+    slotMinutes: 30, minNoticeHours: 2, horizonDays: 14,
+  };
+
   // pull already-booked slot times so we can exclude them
   const { rows: taken } = await pool.query(
     `SELECT slot_at FROM bookings WHERE firm_id = $1 AND status = 'confirmed' AND slot_at > now()`,
@@ -344,18 +352,22 @@ export async function getAvailableSlots(firmId, { count = 6, hours = [10, 12, 14
 
   const slots = [];
   const now = new Date();
-  const earliest = now.getTime() + 2 * 3600 * 1000; // at least 2h from now
-  let day = new Date(now);
+  const earliest = now.getTime() + (av.minNoticeHours || 2) * 3600 * 1000;
+  const day = new Date(now);
   day.setHours(0, 0, 0, 0);
 
-  for (let d = 0; d < 14 && slots.length < count; d++) {
-    day.setDate(day.getDate() + (d === 0 ? 0 : 1));
-    const dow = day.getDay();
-    if (dow === 0 || dow === 6) continue; // skip weekends
-    for (const h of hours) {
+  const horizon = av.horizonDays || 14;
+  for (let d = 0; d <= horizon && slots.length < count; d++) {
+    const cur = new Date(day);
+    cur.setDate(day.getDate() + d);
+    const hoursForDay = (av.days && av.days[cur.getDay()]) || null;
+    if (!hoursForDay) continue; // firm closed this weekday
+    for (const h of hoursForDay) {
       if (slots.length >= count) break;
-      const slot = new Date(day);
-      slot.setHours(h, 0, 0, 0);
+      const slot = new Date(cur);
+      const whole = Math.floor(h);
+      const mins = Math.round((h - whole) * 60);
+      slot.setHours(whole, mins, 0, 0);
       if (slot.getTime() < earliest) continue;
       if (takenSet.has(slot.getTime())) continue;
       slots.push(slot.toISOString());
