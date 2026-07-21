@@ -190,6 +190,8 @@
   function fmtTime(d) { return new Intl.DateTimeFormat("en-GB", { timeZone: tz, hour: "numeric", minute: "2-digit", hour12: true }).format(d); }
 
   function openBookingPicker(bookingType) {
+    // never stack pickers - clear any open (unbooked) one first
+    Array.prototype.forEach.call(body.querySelectorAll(".oe-w-book"), function (c) { c.remove(); });
     fetch(API + "/api/book")
       .then(function (r) { return r.json(); })
       .then(function (data) {
