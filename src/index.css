@@ -95,8 +95,9 @@ h1, h2, h3, .brand-name { font-family: 'Quicksand', 'Nunito Sans', sans-serif; }
 .tab {
   font-size: 0.88rem; color: var(--muted); padding: 8px 16px; border-radius: 9px;
   cursor: pointer; font-weight: 600; transition: color 0.15s, background 0.15s;
+  background: transparent; border: none; font-family: inherit;
 }
-.tab:hover { color: var(--ink); background: var(--light); }
+.tab:hover { color: var(--steel); background: var(--light); }
 .tab.active { color: var(--bright); background: var(--light); }
 .live-badge {
   display: flex; align-items: center; gap: 8px; font-size: 0.8rem; font-weight: 700;
