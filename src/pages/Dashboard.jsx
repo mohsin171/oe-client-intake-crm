@@ -106,9 +106,9 @@ export default function Dashboard() {
             <div className="section">
               <div className="section-head">
                 <span className="section-title">Today at a glance</span>
-                <span className="section-hint">tap a card to see those leads</span>
+                <span className="section-hint">live performance</span>
               </div>
-              <Stats stats={stats} onFilter={applyFilter} />
+              <Stats stats={stats} />
             </div>
           )}
 
@@ -227,12 +227,11 @@ function TopNav({ lastUpdated, flash, activeTab, onTab }) {
   )
 }
 
-function Stats({ stats, onFilter }) {
+function Stats({ stats }) {
   const rt = stats.avg_response_seconds
   const rtLabel = rt === 0 ? '—' : rt < 60 ? `${rt}s` : `${Math.round(rt / 60)}m`
   const pipelineValue = Number(stats.qualified_loan_value || 0)
   const fmtMoney = (n) => n >= 1e6 ? `£${(n / 1e6).toFixed(1)}m` : n >= 1e3 ? `£${Math.round(n / 1e3)}k` : `£${n}`
-  const f = onFilter || (() => {})
 
   return (
     <section className="stats">
@@ -241,26 +240,25 @@ function Stats({ stats, onFilter }) {
         <div className="stat-label">Avg response time</div>
         <div className="stat-note">vs hours by hand</div>
       </div>
-      <button className="stat stat-btn" onClick={() => f({ type: 'all' })}>
+      <div className="stat">
         <div className="stat-value">{stats.total_leads}</div>
         <div className="stat-label">Leads captured</div>
-        <div className="stat-note">view all</div>
-      </button>
-      <button className="stat stat-btn" onClick={() => f({ type: 'qualification', value: 'qualified' })}>
+      </div>
+      <div className="stat">
         <div className="stat-value">{stats.qualified}</div>
         <div className="stat-label">Qualified</div>
         {stats.total_leads > 0 && <div className="stat-note">{stats.qualify_rate}% of all leads</div>}
-      </button>
+      </div>
       <div className="stat">
         <div className="stat-value">{stats.after_hours}</div>
         <div className="stat-label">After hours</div>
         <div className="stat-note">would've been missed</div>
       </div>
-      <button className="stat value stat-btn" onClick={() => f({ type: 'stage', value: 'booked' })}>
+      <div className="stat value">
         <div className="stat-value">{fmtMoney(pipelineValue)}</div>
         <div className="stat-label">Qualified pipeline</div>
         <div className="stat-note">illustrative, from loan sizes</div>
-      </button>
+      </div>
     </section>
   )
 }

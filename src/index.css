@@ -282,12 +282,7 @@ h1, h2, h3, .brand-name { font-family: 'Quicksand', 'Nunito Sans', sans-serif; }
   .main { padding: 20px; }
 }
 
-/* ---- Interactivity: clickable cards, tabs, filters ---- */
-.stat-btn { cursor: pointer; font-family: inherit; text-align: left; border: 1px solid var(--line); transition: border-color 0.15s, box-shadow 0.15s, transform 0.1s; }
-.stat-btn:hover { border-color: #C9DBEE; box-shadow: var(--shadow-lift); transform: translateY(-2px); }
-.stat-btn .stat-note { color: var(--bright); font-weight: 600; }
-.stat.value.stat-btn .stat-note { color: var(--green); }
-
+/* ---- Interactivity: tabs, filters ---- */
 .side-item-btn { width: 100%; border: none; background: none; font-family: inherit; text-align: left; cursor: pointer; }
 .side-item-btn.active { background: var(--light); }
 .side-item-btn.active .side-item-label { color: var(--bright); font-weight: 700; }
