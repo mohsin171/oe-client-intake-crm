@@ -17,6 +17,23 @@ const STAGES = [
 
 const REFRESH_MS = 8000 // "live" feel: poll every 8s
 
+// Safely parse a loan/property amount that may arrive as "220000", "220,000",
+// "£220k", etc. Returns a number or null (so we never render "£NaN").
+function money(v) {
+  if (v == null || v === '') return null
+  if (typeof v === 'number') return isFinite(v) ? v : null
+  let s = String(v).toLowerCase().replace(/[£$,\s]/g, '')
+  let mult = 1
+  if (s.endsWith('k')) { mult = 1e3; s = s.slice(0, -1) }
+  else if (s.endsWith('m')) { mult = 1e6; s = s.slice(0, -1) }
+  const n = parseFloat(s)
+  return isFinite(n) ? Math.round(n * mult) : null
+}
+function fmtGBP(v) {
+  const n = money(v)
+  return n == null ? null : '£' + n.toLocaleString()
+}
+
 export default function Dashboard() {
   const [firm, setFirm] = useState('')
   const [leads, setLeads] = useState([])
@@ -323,7 +340,7 @@ function LeadCard({ lead, selected, onClick }) {
       {f.loan_purpose && (
         <div className="card-fields">
           <span className="chip">{f.loan_purpose}</span>
-          {f.loan_amount && <span className="chip">£{Number(f.loan_amount).toLocaleString()}</span>}
+          {fmtGBP(f.loan_amount) && <span className="chip">{fmtGBP(f.loan_amount)}</span>}
           {f.buyer_type && <span className="chip">{f.buyer_type}</span>}
         </div>
       )}
@@ -388,8 +405,8 @@ function LeadPanel({ id, onClose }) {
         <div className="panel-section">
           <h3>Mortgage details captured</h3>
           {f.loan_purpose && <div className="kv"><span>Purpose</span><span>{f.loan_purpose}</span></div>}
-          {f.loan_amount && <div className="kv"><span>Loan amount</span><span>£{Number(f.loan_amount).toLocaleString()}</span></div>}
-          {f.property_value && <div className="kv"><span>Property value</span><span>£{Number(f.property_value).toLocaleString()}</span></div>}
+          {fmtGBP(f.loan_amount) && <div className="kv"><span>Loan amount</span><span>{fmtGBP(f.loan_amount)}</span></div>}
+          {fmtGBP(f.property_value) && <div className="kv"><span>Property value</span><span>{fmtGBP(f.property_value)}</span></div>}
           {f.timeline && <div className="kv"><span>Timeline</span><span>{f.timeline}</span></div>}
           {f.buyer_type && <div className="kv"><span>Buyer type</span><span>{f.buyer_type}</span></div>}
         </div>
