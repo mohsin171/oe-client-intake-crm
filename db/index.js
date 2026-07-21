@@ -335,13 +335,14 @@ export async function applyRetention(firmId, { days = 365 } = {}) {
 // and anything less than ~2 hours away. Self-contained (no external calendar);
 // real Google/Outlook sync attaches at client onboarding.
 export async function getAvailableSlots(firmId, opts = {}) {
-  const count = opts.count || 6;
   // availability comes from the firm config (passed by the engine). Sensible
   // fallback if not provided.
   const av = opts.availability || {
     days: { 1:[10,12,14,16], 2:[10,12,14,16], 3:[10,12,14,16], 4:[10,12,14,16], 5:[10,12,14,16] },
-    slotMinutes: 30, minNoticeHours: 2, horizonDays: 14,
+    slotMinutes: 30, minNoticeHours: 2,
   };
+  const workingDays = opts.workingDays || av.workingDays || 8;   // span this many OPEN days
+  const perDay = opts.perDay || av.perDay || 2;                  // offer up to this many times per day
 
   // pull already-booked slot times so we can exclude them
   const { rows: taken } = await pool.query(
@@ -356,21 +357,40 @@ export async function getAvailableSlots(firmId, opts = {}) {
   const day = new Date(now);
   day.setHours(0, 0, 0, 0);
 
-  const horizon = av.horizonDays || 14;
-  for (let d = 0; d <= horizon && slots.length < count; d++) {
+  let openDaysSeen = 0;
+  // walk forward day by day; stop once we've covered `workingDays` open days
+  for (let d = 0; d <= 60 && openDaysSeen < workingDays; d++) {
     const cur = new Date(day);
     cur.setDate(day.getDate() + d);
     const hoursForDay = (av.days && av.days[cur.getDay()]) || null;
-    if (!hoursForDay) continue; // firm closed this weekday
+    if (!hoursForDay || hoursForDay.length === 0) continue; // firm closed this weekday
+
+    // build this day's still-available times
+    const dayTimes = [];
     for (const h of hoursForDay) {
-      if (slots.length >= count) break;
       const slot = new Date(cur);
       const whole = Math.floor(h);
       const mins = Math.round((h - whole) * 60);
       slot.setHours(whole, mins, 0, 0);
       if (slot.getTime() < earliest) continue;
       if (takenSet.has(slot.getTime())) continue;
-      slots.push(slot.toISOString());
+      dayTimes.push(slot.toISOString());
+    }
+    if (dayTimes.length === 0) continue; // fully past/booked today, not an "open day" offer
+    openDaysSeen++;
+
+    // spread: offer up to `perDay` times, picking across the day (first, mid, last)
+    if (dayTimes.length <= perDay) {
+      dayTimes.forEach((t) => slots.push(t));
+    } else {
+      const picks = new Set();
+      picks.add(0);                              // earliest
+      picks.add(dayTimes.length - 1);            // latest
+      // fill the middle if perDay > 2
+      for (let i = 1; picks.size < perDay && i < dayTimes.length; i++) {
+        picks.add(Math.round((i * (dayTimes.length - 1)) / perDay));
+      }
+      [...picks].sort((a, b) => a - b).slice(0, perDay).forEach((idx) => slots.push(dayTimes[idx]));
     }
   }
   return slots;
