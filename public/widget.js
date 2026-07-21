@@ -60,10 +60,7 @@
   .oe-w-send:disabled { opacity: 0.5; cursor: default; }
   .oe-w-send svg { width: 18px; height: 18px; fill: #fff; }
   .oe-w-brand { text-align: center; font-size: 0.68rem; color: #9AA6B6; padding: 6px; background: #fff; }
-  .oe-w-slotwrap { align-self: flex-start; max-width: 100%; display: flex; flex-direction: column; gap: 8px; background: #fff; border: 1px solid #E2E9F1; border-radius: 12px; padding: 11px 12px; }
-  .oe-w-slotday { display: flex; flex-direction: column; gap: 5px; }
-  .oe-w-slotday-lbl { font-size: 0.68rem; font-weight: 700; color: #8595A8; text-transform: uppercase; letter-spacing: 0.03em; }
-  .oe-w-slots { display: flex; flex-wrap: wrap; gap: 6px; }
+  .oe-w-slots { display: flex; flex-wrap: wrap; gap: 6px; align-self: flex-start; max-width: 100%; }
   .oe-w-slot { font-size: 0.74rem; background: #F4F7FB; border: 1px solid #D3E0EE; color: #3A5570; padding: 5px 10px; border-radius: 7px; cursor: pointer; font-weight: 700; line-height: 1.2; }
   .oe-w-slot:hover:not(:disabled) { background: var(--oe-accent); color: #fff; border-color: var(--oe-accent); }
   .oe-w-slot:disabled { opacity: 0.4; cursor: default; }
@@ -197,29 +194,14 @@
 
   // Render available appointment slots as tappable buttons.
   function renderSlots(slots) {
-    var wrap = el("div", "oe-w-slotwrap");
-    // group by day so the week is easy to scan
-    var groups = {};
-    var order = [];
+    var wrap = el("div", "oe-w-slots");
     slots.forEach(function (iso) {
       var d = new Date(iso);
-      var key = d.toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" });
-      if (!groups[key]) { groups[key] = []; order.push(key); }
-      groups[key].push(iso);
-    });
-    order.forEach(function (key) {
-      var dayRow = el("div", "oe-w-slotday");
-      dayRow.appendChild(el("div", "oe-w-slotday-lbl", esc(key)));
-      var times = el("div", "oe-w-slots");
-      groups[key].forEach(function (iso) {
-        var d = new Date(iso);
-        var label = d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
-        var b = el("button", "oe-w-slot", esc(label));
-        b.onclick = function () { chooseSlot(iso, wrap, b); };
-        times.appendChild(b);
-      });
-      dayRow.appendChild(times);
-      wrap.appendChild(dayRow);
+      var label = d.toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" }) +
+        ", " + d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+      var b = el("button", "oe-w-slot", esc(label));
+      b.onclick = function () { chooseSlot(iso, wrap, b); };
+      wrap.appendChild(b);
     });
     body.appendChild(wrap);
     body.scrollTop = body.scrollHeight;
