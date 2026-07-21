@@ -34,6 +34,16 @@ function fmtGBP(v) {
   return n == null ? null : '£' + n.toLocaleString()
 }
 
+const STAGE_LABELS = { new: 'New', qualified: 'Qualified', booked: 'Booked', handed_off: 'Needs a human', won: 'Won' }
+const QUAL_LABELS = { qualified: 'Qualified', poor_fit: 'Poor fit', spam: 'Spam', unclear: 'Unclear' }
+function filterLabel(f) {
+  if (!f) return ''
+  if (f.type === 'stage') return STAGE_LABELS[f.value] || f.value
+  if (f.type === 'qualification') return QUAL_LABELS[f.value] || f.value
+  if (f.type === 'all') return 'All leads'
+  return ''
+}
+
 export default function Dashboard() {
   const [firm, setFirm] = useState('')
   const [leads, setLeads] = useState([])
@@ -44,6 +54,8 @@ export default function Dashboard() {
   const [lastUpdated, setLastUpdated] = useState(null)
   const prevCount = useRef(0)
   const [flash, setFlash] = useState(false)
+  const [activeTab, setActiveTab] = useState('overview')  // overview | pipeline | appointments | analytics
+  const [filter, setFilter] = useState(null)              // stage key or qualification to filter pipeline
 
   const load = useCallback(async () => {
     try {
@@ -79,22 +91,28 @@ export default function Dashboard() {
   const needsAttention = leads.filter((l) => l.handoff_needed && l.stage === 'handed_off')
   const stageCounts = STAGES.reduce((acc, s) => { acc[s.key] = leads.filter((l) => l.stage === s.key).length; return acc }, {})
 
+  // Tapping a stat card or sidebar stage filters the pipeline and jumps to it.
+  const applyFilter = (f) => { setFilter(f); setActiveTab('pipeline') }
+
   return (
     <div className="shell">
-      <Sidebar firm={firm} stageCounts={stageCounts} needsAttention={needsAttention.length} total={leads.length} />
+      <Sidebar firm={firm} stageCounts={stageCounts} needsAttention={needsAttention.length} total={leads.length}
+        activeFilter={filter} onStage={(k) => applyFilter({ type: 'stage', value: k })} />
       <div className="workspace">
-        <TopNav lastUpdated={lastUpdated} flash={flash} />
+        <TopNav lastUpdated={lastUpdated} flash={flash} activeTab={activeTab} onTab={(t) => { setActiveTab(t); setFilter(null) }} />
         <main className="main">
-          {stats && (
+
+          {(activeTab === 'overview') && stats && (
             <div className="section">
               <div className="section-head">
                 <span className="section-title">Today at a glance</span>
-                <span className="section-hint">live performance</span>
+                <span className="section-hint">tap a card to see those leads</span>
               </div>
-              <Stats stats={stats} />
+              <Stats stats={stats} onFilter={applyFilter} />
             </div>
           )}
-          {stats && (
+
+          {(activeTab === 'overview' || activeTab === 'analytics') && stats && (
             <div className="section">
               <div className="section-head">
                 <span className="section-title">Performance</span>
@@ -103,15 +121,17 @@ export default function Dashboard() {
               <Analytics stats={stats} />
             </div>
           )}
-          {needsAttention.length > 0 && (
+
+          {(activeTab === 'overview' || activeTab === 'pipeline') && needsAttention.length > 0 && (
             <div className="section">
-              <div className="attention">
+              <div className="attention" onClick={() => applyFilter({ type: 'stage', value: 'handed_off' })} style={{ cursor: 'pointer' }}>
                 <span className="attention-dot" />
-                {needsAttention.length} lead{needsAttention.length > 1 ? 's' : ''} need{needsAttention.length > 1 ? '' : 's'} a human, listed under "Needs a human" below.
+                {needsAttention.length} lead{needsAttention.length > 1 ? 's' : ''} need{needsAttention.length > 1 ? '' : 's'} a human. Tap to view.
               </div>
             </div>
           )}
-          {bookings.length > 0 && (
+
+          {(activeTab === 'overview' || activeTab === 'appointments') && bookings.length > 0 && (
             <div className="section">
               <div className="section-head">
                 <span className="section-title">Upcoming appointments</span>
@@ -120,13 +140,21 @@ export default function Dashboard() {
               <Appointments bookings={bookings} />
             </div>
           )}
-          <div className="section">
-            <div className="section-head">
-              <span className="section-title">Pipeline</span>
-              <span className="section-hint">every lead, by stage</span>
+          {activeTab === 'appointments' && bookings.length === 0 && (
+            <div className="section"><div className="pipeline-empty"><strong>No appointments yet.</strong> Booked calls will appear here.</div></div>
+          )}
+
+          {(activeTab === 'overview' || activeTab === 'pipeline') && (
+            <div className="section">
+              <div className="section-head">
+                <span className="section-title">Pipeline</span>
+                {filter
+                  ? <span className="section-hint filter-active" onClick={() => setFilter(null)}>Filtered: {filterLabel(filter)} · clear ✕</span>
+                  : <span className="section-hint">every lead, by stage</span>}
+              </div>
+              <Pipeline leads={leads} loading={loading} selectedId={selectedId} onSelect={setSelectedId} filter={filter} />
             </div>
-            <Pipeline leads={leads} loading={loading} selectedId={selectedId} onSelect={setSelectedId} />
-          </div>
+          )}
         </main>
         {selectedId && <LeadPanel id={selectedId} onClose={() => setSelectedId(null)} />}
       </div>
@@ -134,7 +162,7 @@ export default function Dashboard() {
   )
 }
 
-function Sidebar({ firm, stageCounts, needsAttention, total }) {
+function Sidebar({ firm, stageCounts, needsAttention, total, activeFilter, onStage }) {
   const items = [
     { key: 'new', label: 'New', dot: 'new' },
     { key: 'qualified', label: 'Qualified', dot: 'qualified' },
@@ -142,6 +170,7 @@ function Sidebar({ firm, stageCounts, needsAttention, total }) {
     { key: 'handed_off', label: 'Needs a human', dot: 'handed_off' },
     { key: 'won', label: 'Won', dot: 'won' },
   ]
+  const isActive = (k) => activeFilter && activeFilter.type === 'stage' && activeFilter.value === k
   return (
     <aside className="sidebar">
       <div className="brand">
@@ -155,11 +184,11 @@ function Sidebar({ firm, stageCounts, needsAttention, total }) {
       <div className="side-section">
         <div className="side-label">Pipeline</div>
         {items.map((it) => (
-          <div key={it.key} className="side-item">
+          <button key={it.key} className={'side-item side-item-btn' + (isActive(it.key) ? ' active' : '')} onClick={() => onStage(it.key)}>
             <span className={'side-dot ' + it.dot} />
             <span className="side-item-label">{it.label}</span>
             <span className="side-count">{stageCounts[it.key] || 0}</span>
-          </div>
+          </button>
         ))}
       </div>
 
@@ -167,7 +196,7 @@ function Sidebar({ firm, stageCounts, needsAttention, total }) {
         <div className="side-label">At a glance</div>
         <div className="side-item"><span className="side-item-label">Total leads</span><span className="side-count">{total}</span></div>
         {needsAttention > 0 && (
-          <div className="side-item attention-item"><span className="side-item-label">Needs a human</span><span className="side-count urgent">{needsAttention}</span></div>
+          <button className="side-item side-item-btn attention-item" onClick={() => onStage('handed_off')}><span className="side-item-label">Needs a human</span><span className="side-count urgent">{needsAttention}</span></button>
         )}
       </div>
 
@@ -176,14 +205,19 @@ function Sidebar({ firm, stageCounts, needsAttention, total }) {
   )
 }
 
-function TopNav({ lastUpdated, flash }) {
+function TopNav({ lastUpdated, flash, activeTab, onTab }) {
+  const tabs = [
+    { key: 'overview', label: 'Overview' },
+    { key: 'pipeline', label: 'Pipeline' },
+    { key: 'appointments', label: 'Appointments' },
+    { key: 'analytics', label: 'Analytics' },
+  ]
   return (
     <header className="topnav">
       <div className="topnav-tabs">
-        <span className="tab active">Overview</span>
-        <span className="tab">Pipeline</span>
-        <span className="tab">Appointments</span>
-        <span className="tab">Analytics</span>
+        {tabs.map((t) => (
+          <button key={t.key} className={'tab' + (activeTab === t.key ? ' active' : '')} onClick={() => onTab(t.key)}>{t.label}</button>
+        ))}
       </div>
       <div className={'live-badge' + (flash ? ' flash' : '')}>
         <span className="live-dot" />
@@ -193,11 +227,12 @@ function TopNav({ lastUpdated, flash }) {
   )
 }
 
-function Stats({ stats }) {
+function Stats({ stats, onFilter }) {
   const rt = stats.avg_response_seconds
   const rtLabel = rt === 0 ? '—' : rt < 60 ? `${rt}s` : `${Math.round(rt / 60)}m`
   const pipelineValue = Number(stats.qualified_loan_value || 0)
   const fmtMoney = (n) => n >= 1e6 ? `£${(n / 1e6).toFixed(1)}m` : n >= 1e3 ? `£${Math.round(n / 1e3)}k` : `£${n}`
+  const f = onFilter || (() => {})
 
   return (
     <section className="stats">
@@ -206,25 +241,26 @@ function Stats({ stats }) {
         <div className="stat-label">Avg response time</div>
         <div className="stat-note">vs hours by hand</div>
       </div>
-      <div className="stat">
+      <button className="stat stat-btn" onClick={() => f({ type: 'all' })}>
         <div className="stat-value">{stats.total_leads}</div>
         <div className="stat-label">Leads captured</div>
-      </div>
-      <div className="stat">
+        <div className="stat-note">view all</div>
+      </button>
+      <button className="stat stat-btn" onClick={() => f({ type: 'qualification', value: 'qualified' })}>
         <div className="stat-value">{stats.qualified}</div>
         <div className="stat-label">Qualified</div>
         {stats.total_leads > 0 && <div className="stat-note">{stats.qualify_rate}% of all leads</div>}
-      </div>
+      </button>
       <div className="stat">
         <div className="stat-value">{stats.after_hours}</div>
         <div className="stat-label">After hours</div>
         <div className="stat-note">would've been missed</div>
       </div>
-      <div className="stat value">
+      <button className="stat value stat-btn" onClick={() => f({ type: 'stage', value: 'booked' })}>
         <div className="stat-value">{fmtMoney(pipelineValue)}</div>
         <div className="stat-label">Qualified pipeline</div>
         <div className="stat-note">illustrative, from loan sizes</div>
-      </div>
+      </button>
     </section>
   )
 }
@@ -332,7 +368,7 @@ function Appointments({ bookings }) {
   )
 }
 
-function Pipeline({ leads, loading, selectedId, onSelect }) {
+function Pipeline({ leads, loading, selectedId, onSelect, filter }) {
   if (loading && leads.length === 0) return <div className="pipeline"><div className="pipeline-empty">Loading your pipeline…</div></div>
   if (leads.length === 0) {
     return (
@@ -343,6 +379,26 @@ function Pipeline({ leads, loading, selectedId, onSelect }) {
       </div>
     )
   }
+
+  // Filtered view: a focused single column of matching leads.
+  if (filter && filter.type !== 'all') {
+    const match = (l) =>
+      (filter.type === 'stage' && l.stage === filter.value) ||
+      (filter.type === 'qualification' && l.qualification === filter.value)
+    const shown = leads.filter(match)
+    return (
+      <div className="pipeline-filtered">
+        {shown.length === 0 && <div className="pipeline-empty">No leads match this filter right now.</div>}
+        <div className="filtered-grid">
+          {shown.map((l) => (
+            <LeadCard key={l.id} lead={l} selected={l.id === selectedId} onClick={() => onSelect(l.id)} />
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  // Default: even kanban across all stages.
   return (
     <div className="pipeline">
       {STAGES.map((stage) => {
