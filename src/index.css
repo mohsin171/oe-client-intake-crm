@@ -81,6 +81,37 @@ body {
 .stat-value { font-size: 1.9rem; font-weight: 800; letter-spacing: -0.02em; line-height: 1; }
 .stat-label { font-size: 0.82rem; margin-top: 6px; font-weight: 600; }
 .stat-note { font-size: 0.68rem; opacity: 0.6; margin-top: 2px; }
+.stat.value { background: linear-gradient(135deg, #2E7D5B, #24614699); border: none; color: #fff; }
+.stat.value .stat-note { opacity: 0.8; }
+
+/* ---- Analytics row (funnel / channels / trend) ---- */
+.analytics-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 22px; }
+.panel-box { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; }
+.box-title { font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); font-weight: 800; margin-bottom: 14px; }
+.box-empty { color: var(--muted); font-size: 0.85rem; }
+/* funnel */
+.funnel { display: flex; flex-direction: column; gap: 12px; }
+.funnel-head { display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 5px; }
+.funnel-head strong { color: var(--steel); }
+.funnel-bar { height: 8px; background: var(--light); border-radius: 999px; overflow: hidden; }
+.funnel-fill { height: 100%; background: linear-gradient(90deg, var(--bright), var(--steel)); border-radius: 999px; transition: width 0.5s; }
+/* channels */
+.channels { display: flex; flex-direction: column; gap: 11px; }
+.chan-row { display: grid; grid-template-columns: 68px 1fr 28px; align-items: center; gap: 8px; font-size: 0.82rem; }
+.chan-label { color: var(--muted); }
+.chan-bar { height: 8px; background: var(--light); border-radius: 999px; overflow: hidden; }
+.chan-fill { height: 100%; border-radius: 999px; }
+.chan-fill.web { background: var(--bright); }
+.chan-fill.whatsapp { background: #1DA851; }
+.chan-fill.email { background: var(--steel); }
+.chan-fill.phone { background: #7C3AED; }
+.chan-n { text-align: right; font-weight: 700; color: var(--ink); }
+/* trend */
+.trend { display: flex; align-items: flex-end; gap: 8px; height: 90px; }
+.trend-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; height: 100%; }
+.trend-bar-wrap { flex: 1; width: 100%; display: flex; align-items: flex-end; }
+.trend-bar { width: 100%; background: linear-gradient(180deg, var(--bright), var(--steel)); border-radius: 5px 5px 0 0; min-height: 4px; transition: height 0.5s; }
+.trend-label { font-size: 0.68rem; color: var(--muted); }
 
 /* ---- Appointments ---- */
 .appts { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; margin-bottom: 22px; }
@@ -210,6 +241,7 @@ body {
 @media (max-width: 900px) {
   .stats { grid-template-columns: repeat(2, 1fr); }
   .stat.hero { grid-column: span 2; }
+  .analytics-row { grid-template-columns: 1fr; }
   .body { flex-direction: column; }
   .panel {
     width: 100%; position: fixed; top: 0; left: 0; right: 0; bottom: 0;

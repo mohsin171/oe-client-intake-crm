@@ -195,15 +195,43 @@ export async function getAnalytics(firmId) {
        COUNT(*)::int AS total_leads,
        COUNT(*) FILTER (WHERE qualification = 'qualified')::int AS qualified,
        COUNT(*) FILTER (WHERE qualification = 'spam')::int AS spam,
+       COUNT(*) FILTER (WHERE qualification = 'poor_fit')::int AS poor_fit,
        COUNT(*) FILTER (WHERE booking_at IS NOT NULL)::int AS meetings_booked,
+       COUNT(*) FILTER (WHERE handoff_needed)::int AS handoffs,
        COUNT(*) FILTER (WHERE EXTRACT(HOUR FROM first_seen_at) >= 18
                           OR EXTRACT(HOUR FROM first_seen_at) < 8)::int AS after_hours,
+       COUNT(*) FILTER (WHERE channel = 'web')::int AS ch_web,
+       COUNT(*) FILTER (WHERE channel = 'whatsapp')::int AS ch_whatsapp,
+       COUNT(*) FILTER (WHERE channel = 'email')::int AS ch_email,
+       COUNT(*) FILTER (WHERE channel = 'phone')::int AS ch_phone,
        COALESCE(ROUND(AVG(EXTRACT(EPOCH FROM (first_reply_at - first_seen_at)))
-                 FILTER (WHERE first_reply_at IS NOT NULL))::int, 0) AS avg_response_seconds
+                 FILTER (WHERE first_reply_at IS NOT NULL))::int, 0) AS avg_response_seconds,
+       COALESCE(SUM((fields->>'loan_amount')::numeric)
+                 FILTER (WHERE qualification = 'qualified'
+                   AND fields->>'loan_amount' ~ '^[0-9]+(\\.[0-9]+)?$'), 0) AS qualified_loan_value
      FROM people WHERE firm_id = $1`,
     [firmId]
   );
-  return rows[0];
+  const a = rows[0];
+
+  // 7-day trend: leads per day for the last 7 days (oldest first)
+  const { rows: trend } = await pool.query(
+    `SELECT to_char(d.day, 'Dy') AS label, COALESCE(c.n, 0)::int AS n
+     FROM generate_series(current_date - interval '6 days', current_date, interval '1 day') AS d(day)
+     LEFT JOIN (
+       SELECT date_trunc('day', created_at) AS day, COUNT(*) AS n
+       FROM people WHERE firm_id = $1 AND created_at > current_date - interval '7 days'
+       GROUP BY 1
+     ) c ON c.day = d.day
+     ORDER BY d.day ASC`,
+    [firmId]
+  );
+  a.trend = trend;
+
+  // derived rates
+  a.qualify_rate = a.total_leads ? Math.round((a.qualified / a.total_leads) * 100) : 0;
+  a.book_rate = a.qualified ? Math.round((a.meetings_booked / a.qualified) * 100) : 0;
+  return a;
 }
 
 export async function closePool() { await pool.end(); }

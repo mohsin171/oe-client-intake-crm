@@ -100,31 +100,108 @@ function Header({ firm, lastUpdated, flash }) {
 function Stats({ stats }) {
   const rt = stats.avg_response_seconds
   const rtLabel = rt === 0 ? '—' : rt < 60 ? `${rt}s` : `${Math.round(rt / 60)}m`
+  const pipelineValue = Number(stats.qualified_loan_value || 0)
+  const fmtMoney = (n) => n >= 1e6 ? `£${(n / 1e6).toFixed(1)}m` : n >= 1e3 ? `£${Math.round(n / 1e3)}k` : `£${n}`
+
   return (
-    <section className="stats">
-      <div className="stat hero">
-        <div className="stat-value">{rtLabel}</div>
-        <div className="stat-label">Avg response time</div>
-        <div className="stat-note">vs hours by hand</div>
+    <>
+      <section className="stats">
+        <div className="stat hero">
+          <div className="stat-value">{rtLabel}</div>
+          <div className="stat-label">Avg response time</div>
+          <div className="stat-note">vs hours by hand</div>
+        </div>
+        <div className="stat">
+          <div className="stat-value">{stats.total_leads}</div>
+          <div className="stat-label">Leads captured</div>
+        </div>
+        <div className="stat">
+          <div className="stat-value">{stats.qualified}</div>
+          <div className="stat-label">Qualified</div>
+          {stats.total_leads > 0 && <div className="stat-note">{stats.qualify_rate}% of all leads</div>}
+        </div>
+        <div className="stat">
+          <div className="stat-value">{stats.after_hours}</div>
+          <div className="stat-label">After hours</div>
+          <div className="stat-note">would've been missed</div>
+        </div>
+        <div className="stat value">
+          <div className="stat-value">{fmtMoney(pipelineValue)}</div>
+          <div className="stat-label">Qualified pipeline</div>
+          <div className="stat-note">illustrative, from loan sizes</div>
+        </div>
+      </section>
+
+      <div className="analytics-row">
+        <Funnel stats={stats} />
+        <Channels stats={stats} />
+        <Trend trend={stats.trend || []} />
       </div>
-      <div className="stat">
-        <div className="stat-value">{stats.total_leads}</div>
-        <div className="stat-label">Leads captured</div>
+    </>
+  )
+}
+
+function Funnel({ stats }) {
+  const total = stats.total_leads || 0
+  const steps = [
+    { label: 'Captured', n: total, pct: 100 },
+    { label: 'Qualified', n: stats.qualified, pct: total ? Math.round((stats.qualified / total) * 100) : 0 },
+    { label: 'Booked', n: stats.meetings_booked, pct: total ? Math.round((stats.meetings_booked / total) * 100) : 0 },
+  ]
+  return (
+    <div className="panel-box">
+      <h3 className="box-title">Conversion funnel</h3>
+      <div className="funnel">
+        {steps.map((s) => (
+          <div key={s.label} className="funnel-row">
+            <div className="funnel-head"><span>{s.label}</span><strong>{s.n}</strong></div>
+            <div className="funnel-bar"><div className="funnel-fill" style={{ width: Math.max(s.pct, 3) + '%' }} /></div>
+          </div>
+        ))}
       </div>
-      <div className="stat">
-        <div className="stat-value">{stats.qualified}</div>
-        <div className="stat-label">Qualified</div>
+    </div>
+  )
+}
+
+function Channels({ stats }) {
+  const rows = [
+    { label: 'Website', n: stats.ch_web || 0, cls: 'web' },
+    { label: 'WhatsApp', n: stats.ch_whatsapp || 0, cls: 'whatsapp' },
+    { label: 'Email', n: stats.ch_email || 0, cls: 'email' },
+    { label: 'Phone', n: stats.ch_phone || 0, cls: 'phone' },
+  ].filter((r) => r.n > 0)
+  const max = Math.max(1, ...rows.map((r) => r.n))
+  return (
+    <div className="panel-box">
+      <h3 className="box-title">Leads by channel</h3>
+      {rows.length === 0 && <p className="box-empty">No leads yet.</p>}
+      <div className="channels">
+        {rows.map((r) => (
+          <div key={r.label} className="chan-row">
+            <span className="chan-label">{r.label}</span>
+            <div className="chan-bar"><div className={'chan-fill ' + r.cls} style={{ width: (r.n / max) * 100 + '%' }} /></div>
+            <span className="chan-n">{r.n}</span>
+          </div>
+        ))}
       </div>
-      <div className="stat">
-        <div className="stat-value">{stats.after_hours}</div>
-        <div className="stat-label">After hours</div>
-        <div className="stat-note">would've been missed</div>
+    </div>
+  )
+}
+
+function Trend({ trend }) {
+  const max = Math.max(1, ...trend.map((d) => d.n))
+  return (
+    <div className="panel-box">
+      <h3 className="box-title">Last 7 days</h3>
+      <div className="trend">
+        {trend.map((d, i) => (
+          <div key={i} className="trend-col">
+            <div className="trend-bar-wrap"><div className="trend-bar" style={{ height: Math.max((d.n / max) * 100, 4) + '%' }} title={d.n + ' leads'} /></div>
+            <div className="trend-label">{d.label}</div>
+          </div>
+        ))}
       </div>
-      <div className="stat">
-        <div className="stat-value">{stats.meetings_booked}</div>
-        <div className="stat-label">Meetings booked</div>
-      </div>
-    </section>
+    </div>
   )
 }
 
