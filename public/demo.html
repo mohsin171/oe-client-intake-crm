@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rivergate Mortgages — Whole-of-Market Mortgage Advice</title>
+  <style>
+    :root { --navy: #12243B; --gold: #C79A4F; --accent: #1E6B54; --sand: #F6F3EC; --ink: #23303F; --muted: #6B7688; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Georgia', 'Times New Roman', serif; color: var(--ink); line-height: 1.6; }
+    .sans { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+    a { color: inherit; }
+    /* header */
+    header { background: #fff; border-bottom: 1px solid #EAE4D8; position: sticky; top: 0; z-index: 100; }
+    .nav { max-width: 1120px; margin: 0 auto; padding: 18px 24px; display: flex; align-items: center; justify-content: space-between; }
+    .logo { font-size: 1.5rem; font-weight: 700; color: var(--navy); letter-spacing: -0.01em; }
+    .logo span { color: var(--accent); }
+    .nav-links { display: flex; gap: 28px; font-family: -apple-system, sans-serif; font-size: 0.92rem; }
+    .nav-links a { text-decoration: none; color: var(--ink); }
+    .nav-links a:hover { color: var(--accent); }
+    .nav-cta { background: var(--accent); color: #fff; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-family: -apple-system, sans-serif; font-size: 0.9rem; font-weight: 600; }
+    /* hero */
+    .hero { background: linear-gradient(180deg, var(--sand), #fff); padding: 80px 24px 70px; }
+    .hero-inner { max-width: 1120px; margin: 0 auto; display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 50px; align-items: center; }
+    .hero h1 { font-size: 3rem; line-height: 1.12; color: var(--navy); margin-bottom: 20px; letter-spacing: -0.02em; }
+    .hero p.lead { font-size: 1.18rem; color: var(--muted); margin-bottom: 28px; }
+    .hero-cta { display: flex; gap: 14px; align-items: center; }
+    .btn-primary { background: var(--accent); color: #fff; padding: 14px 26px; border-radius: 9px; text-decoration: none; font-family: -apple-system, sans-serif; font-weight: 600; font-size: 0.98rem; display: inline-block; }
+    .btn-link { color: var(--accent); font-family: -apple-system, sans-serif; font-weight: 600; text-decoration: none; font-size: 0.95rem; }
+    .hero-card { background: #fff; border: 1px solid #EAE4D8; border-radius: 16px; padding: 30px; box-shadow: 0 12px 40px rgba(18,36,59,0.08); }
+    .hero-card h3 { font-family: -apple-system, sans-serif; font-size: 1.05rem; color: var(--navy); margin-bottom: 16px; }
+    .hero-card .stat-row { display: flex; justify-content: space-between; padding: 11px 0; border-bottom: 1px solid #F0EBE0; font-family: -apple-system, sans-serif; }
+    .hero-card .stat-row:last-child { border: none; }
+    .hero-card .stat-row .num { font-weight: 700; color: var(--accent); }
+    .hero-card .stat-row .lbl { color: var(--muted); font-size: 0.92rem; }
+    /* trust bar */
+    .trust { background: var(--navy); color: #fff; padding: 18px 24px; text-align: center; font-family: -apple-system, sans-serif; font-size: 0.9rem; letter-spacing: 0.02em; }
+    .trust span { opacity: 0.7; margin: 0 18px; }
+    /* services */
+    .services { max-width: 1120px; margin: 0 auto; padding: 80px 24px; }
+    .section-label { font-family: -apple-system, sans-serif; text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.8rem; color: var(--accent); font-weight: 700; text-align: center; margin-bottom: 10px; }
+    .section-title { font-size: 2.1rem; color: var(--navy); text-align: center; margin-bottom: 48px; letter-spacing: -0.01em; }
+    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 26px; }
+    .svc { background: #fff; border: 1px solid #EAE4D8; border-radius: 14px; padding: 28px; }
+    .svc .ic { width: 44px; height: 44px; border-radius: 10px; background: var(--sand); display: flex; align-items: center; justify-content: center; margin-bottom: 16px; font-size: 1.4rem; }
+    .svc h3 { font-family: -apple-system, sans-serif; font-size: 1.15rem; color: var(--navy); margin-bottom: 9px; }
+    .svc p { color: var(--muted); font-size: 0.96rem; }
+    /* cta band */
+    .cta-band { background: var(--sand); padding: 64px 24px; text-align: center; }
+    .cta-band h2 { font-size: 2rem; color: var(--navy); margin-bottom: 14px; }
+    .cta-band p { color: var(--muted); font-size: 1.1rem; margin-bottom: 26px; max-width: 560px; margin-left: auto; margin-right: auto; }
+    /* footer */
+    footer { background: var(--navy); color: #C9D3DF; padding: 48px 24px; font-family: -apple-system, sans-serif; font-size: 0.88rem; }
+    .foot-inner { max-width: 1120px; margin: 0 auto; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 20px; }
+    .foot-inner .logo { color: #fff; font-family: Georgia, serif; }
+    .foot-note { opacity: 0.6; font-size: 0.8rem; margin-top: 8px; max-width: 440px; line-height: 1.5; }
+    /* demo banner */
+    .demo-banner { background: #1E6B54; color: #fff; text-align: center; font-family: -apple-system, sans-serif; font-size: 0.85rem; padding: 9px 16px; }
+    .demo-banner a { color: #fff; font-weight: 700; }
+    @media (max-width: 860px) {
+      .hero-inner { grid-template-columns: 1fr; gap: 34px; }
+      .hero h1 { font-size: 2.2rem; }
+      .grid { grid-template-columns: 1fr; }
+      .nav-links { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="demo-banner sans">
+    This is a live demo of an Orca Edge AI intake system. Try the chat bubble, then watch the lead appear on the
+    <a href="/dashboard" target="_blank">operations dashboard</a>.
+  </div>
+
+  <header>
+    <div class="nav">
+      <div class="logo">Rivergate<span>.</span></div>
+      <nav class="nav-links">
+        <a href="#services">Mortgages</a>
+        <a href="#services">Remortgaging</a>
+        <a href="#services">Buy-to-Let</a>
+        <a href="#about">About</a>
+      </nav>
+      <a href="#" class="nav-cta sans" onclick="return openChat()">Talk to an adviser</a>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="hero-inner">
+      <div>
+        <h1>The right mortgage, found for you.</h1>
+        <p class="lead sans">Whole-of-market mortgage advice for first-time buyers, home movers, and landlords across the UK. Free consultation, no obligation.</p>
+        <div class="hero-cta">
+          <a href="#" class="btn-primary" onclick="return openChat()">Get started</a>
+          <a href="#services" class="btn-link sans">See how we help →</a>
+        </div>
+      </div>
+      <div class="hero-card">
+        <h3>Why homeowners choose Rivergate</h3>
+        <div class="stat-row"><span class="lbl">Lenders we compare</span><span class="num">90+</span></div>
+        <div class="stat-row"><span class="lbl">Often no broker fee</span><span class="num">✓</span></div>
+        <div class="stat-row"><span class="lbl">Self-employed specialists</span><span class="num">✓</span></div>
+        <div class="stat-row"><span class="lbl">Agreement in principle</span><span class="num">1-2 days</span></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="trust sans">
+    <span>First-Time Buyers</span> · <span>Remortgaging</span> · <span>Home Movers</span> · <span>Buy-to-Let</span> · <span>Self-Employed</span>
+  </div>
+
+  <section class="services" id="services">
+    <div class="section-label sans">What we do</div>
+    <h2 class="section-title">Mortgage advice for every situation</h2>
+    <div class="grid">
+      <div class="svc">
+        <div class="ic">🏡</div>
+        <h3>First-Time Buyers</h3>
+        <p>From agreement in principle to completion, with lenders suited to smaller deposits and first purchases.</p>
+      </div>
+      <div class="svc">
+        <div class="ic">🔄</div>
+        <h3>Remortgaging</h3>
+        <p>We review your current deal and search the market for a better rate as your fixed term ends.</p>
+      </div>
+      <div class="svc">
+        <div class="ic">🔑</div>
+        <h3>Home Movers</h3>
+        <p>Arranging the mortgage for your next home, including porting your existing mortgage.</p>
+      </div>
+      <div class="svc">
+        <div class="ic">🏘️</div>
+        <h3>Buy-to-Let</h3>
+        <p>Mortgages for landlords and investors, including portfolio and limited-company buy-to-let.</p>
+      </div>
+      <div class="svc">
+        <div class="ic">📊</div>
+        <h3>Self-Employed</h3>
+        <p>Specialist help for self-employed and complex-income applicants that high-street lenders struggle with.</p>
+      </div>
+      <div class="svc">
+        <div class="ic">💬</div>
+        <h3>Free Consultation</h3>
+        <p>A short, no-obligation fact-find call to understand your situation and outline your options.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta-band" id="about">
+    <h2>Let's find your mortgage.</h2>
+    <p class="sans">Tell us a little about what you need and we'll arrange a free fact-find call with an adviser. It takes about two minutes to get started.</p>
+    <a href="#" class="btn-primary" onclick="return openChat()">Chat with us now</a>
+  </section>
+
+  <footer>
+    <div class="foot-inner">
+      <div>
+        <div class="logo">Rivergate<span style="color:var(--accent)">.</span></div>
+        <p class="foot-note">Rivergate Mortgages is a fictional firm used to demonstrate the Orca Edge AI intake system. Your mortgage is secured against your home; it may be repossessed if you do not keep up repayments.</p>
+      </div>
+      <div>
+        <p>14 Kings Walk, Reading RG1 2HG</p>
+        <p>Mon-Fri 9-6 · Sat 9-1</p>
+        <p style="margin-top:8px; opacity:0.6;">A demo by Orca Edge</p>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    function openChat() {
+      var b = document.querySelector('.oe-w-bubble');
+      if (b) b.click();
+      return false;
+    }
+  </script>
+  <!-- The Orca Edge intake widget: one line, drops onto any site -->
+  <script src="/widget.js" data-api=""></script>
+</body>
+</html>
