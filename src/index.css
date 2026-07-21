@@ -37,7 +37,7 @@ body {
 }
 h1, h2, h3, .brand-name { font-family: 'Quicksand', 'Nunito Sans', sans-serif; }
 
-.shell { display: flex; min-height: 100vh; }
+.shell { display: flex; min-height: 100vh; position: relative; overflow: hidden; }
 
 /* ---- Sidebar ---- */
 .sidebar {
@@ -294,3 +294,88 @@ h1, h2, h3, .brand-name { font-family: 'Quicksand', 'Nunito Sans', sans-serif; }
 
 .pipeline-filtered { }
 .filtered-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
+
+/* ============================================================================
+   Ambient glowing background circles + smooth transitions (premium motion)
+   ============================================================================ */
+
+/* glows sit behind everything; sidebar/workspace lifted above via z-index */
+.sidebar, .workspace { position: relative; z-index: 1; }
+
+.bg-glow {
+  position: fixed;
+  border-radius: 50%;
+  filter: blur(90px);
+  opacity: 0.5;
+  pointer-events: none;
+  z-index: 0;
+}
+.bg-glow-1 {
+  width: 520px; height: 520px;
+  background: radial-gradient(circle, rgba(69,146,220,0.35), transparent 70%);
+  top: -160px; right: -120px;
+  animation: drift1 22s ease-in-out infinite;
+}
+.bg-glow-2 {
+  width: 440px; height: 440px;
+  background: radial-gradient(circle, rgba(56,117,174,0.28), transparent 70%);
+  bottom: -180px; left: 180px;
+  animation: drift2 28s ease-in-out infinite;
+}
+.bg-glow-3 {
+  width: 360px; height: 360px;
+  background: radial-gradient(circle, rgba(233,241,248,0.9), rgba(69,146,220,0.12), transparent 72%);
+  top: 40%; right: 22%;
+  animation: drift3 25s ease-in-out infinite;
+}
+@keyframes drift1 {
+  0%,100% { transform: translate(0,0) scale(1); }
+  50%     { transform: translate(-50px, 60px) scale(1.12); }
+}
+@keyframes drift2 {
+  0%,100% { transform: translate(0,0) scale(1); }
+  50%     { transform: translate(70px, -40px) scale(1.08); }
+}
+@keyframes drift3 {
+  0%,100% { transform: translate(0,0) scale(1); opacity: 0.4; }
+  50%     { transform: translate(-40px, -50px) scale(1.15); opacity: 0.6; }
+}
+
+/* content entrance: sections rise + fade in, gently staggered */
+.section {
+  animation: rise 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.section:nth-child(2) { animation-delay: 0.05s; }
+.section:nth-child(3) { animation-delay: 0.1s; }
+.section:nth-child(4) { animation-delay: 0.15s; }
+.section:nth-child(5) { animation-delay: 0.2s; }
+@keyframes rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* stat + panel cards get a subtle pop as they arrive */
+.stat, .panel-box, .appt, .column {
+  animation: pop 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes pop {
+  from { opacity: 0; transform: translateY(10px) scale(0.985); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* smoother interactive transitions everywhere */
+.stat, .panel-box, .card, .appt, .column, .tab, .side-item, .live-badge, .filter-active, .close {
+  transition: transform 0.18s cubic-bezier(0.22,1,0.36,1), box-shadow 0.18s ease, background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+/* hero + funnel bars animate their fill */
+.funnel-fill, .chan-fill, .trend-bar { transition: width 0.7s cubic-bezier(0.22,1,0.36,1), height 0.7s cubic-bezier(0.22,1,0.36,1); }
+
+/* lead cards lift a touch more, smoothly */
+.card:hover { transform: translateY(-2px); }
+
+/* respect users who prefer no motion */
+@media (prefers-reduced-motion: reduce) {
+  .bg-glow, .section, .stat, .panel-box, .appt, .column { animation: none !important; }
+  * { transition: none !important; }
+}

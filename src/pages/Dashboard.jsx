@@ -96,11 +96,14 @@ export default function Dashboard() {
 
   return (
     <div className="shell">
+      <div className="bg-glow bg-glow-1" />
+      <div className="bg-glow bg-glow-2" />
+      <div className="bg-glow bg-glow-3" />
       <Sidebar firm={firm} stageCounts={stageCounts} needsAttention={needsAttention.length} total={leads.length}
         activeFilter={filter} onStage={(k) => applyFilter({ type: 'stage', value: k })} />
       <div className="workspace">
         <TopNav lastUpdated={lastUpdated} flash={flash} activeTab={activeTab} onTab={(t) => { setActiveTab(t); setFilter(null) }} />
-        <main className="main">
+        <main className="main" key={activeTab}>
 
           {(activeTab === 'overview') && stats && (
             <div className="section">
