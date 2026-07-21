@@ -169,21 +169,26 @@ h1, h2, h3, .brand-name { font-family: 'Quicksand', 'Nunito Sans', sans-serif; }
 /* ---- Attention banner ---- */
 .attention {
   display: flex; align-items: center; gap: 10px;
-  background: var(--amber-bg); color: var(--amber);
-  border: 1px solid #F0DFBB; border-radius: 14px;
+  background: var(--light); color: var(--steel);
+  border: 1px solid rgba(69,146,220,0.4); border-radius: 14px;
   padding: 14px 18px; font-size: 0.88rem; font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 0 0 1px rgba(69,146,220,0.12), 0 0 18px rgba(69,146,220,0.18);
+  transition: box-shadow 0.2s, border-color 0.2s;
 }
-.attention-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--amber); }
+.attention:hover { border-color: var(--bright); box-shadow: 0 0 0 1px rgba(69,146,220,0.25), 0 0 26px rgba(69,146,220,0.3); }
+.attention-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--bright); box-shadow: 0 0 8px rgba(69,146,220,0.7); }
 
 /* ---- Appointments ---- */
-.appts-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
-.appt { display: flex; gap: 16px; align-items: center; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; box-shadow: var(--shadow); }
+.appts-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+.appt { display: flex; gap: 16px; align-items: center; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; box-shadow: var(--shadow); }
 .appt-when { text-align: center; flex-shrink: 0; padding-right: 16px; border-right: 1px solid var(--line); }
 .appt-day { font-size: 0.72rem; font-weight: 700; color: var(--green); text-transform: uppercase; }
 .appt-time { font-size: 1.2rem; font-weight: 800; color: var(--green); }
-.appt-who { display: flex; flex-direction: column; min-width: 0; }
+.appt-who { display: flex; flex-direction: column; min-width: 0; gap: 3px; }
 .appt-who strong { font-size: 0.94rem; }
-.appt-who span { font-size: 0.78rem; color: var(--muted); text-transform: capitalize; }
+.appt-who span { font-size: 0.78rem; color: var(--muted); word-break: break-word; line-height: 1.35; }
+.appt-type { text-transform: capitalize; }
 
 /* ---- Pipeline: clean even KANBAN columns ---- */
 .pipeline { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; align-items: start; }

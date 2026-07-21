@@ -349,30 +349,23 @@ function Trend({ trend }) {
 
 function Appointments({ bookings }) {
   return (
-    <section className="appts">
-      <div className="appts-head">
-        <span className="appts-icon">📅</span>
-        Upcoming appointments
-        <span className="count">{bookings.length}</span>
-      </div>
-      <div className="appts-list">
-        {bookings.map((b) => {
-          const d = new Date(b.slot_at)
-          return (
-            <div key={b.id} className="appt">
-              <div className="appt-when">
-                <div className="appt-day">{d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}</div>
-                <div className="appt-time">{d.toLocaleTimeString('en-GB', { hour: 'numeric', minute: '2-digit' })}</div>
-              </div>
-              <div className="appt-who">
-                <strong>{b.name || 'Unknown'}</strong>
-                <span>{b.slot_type}{b.contact ? ' · ' + b.contact : ''}</span>
-              </div>
+    <div className="appts-list">
+      {bookings.map((b) => {
+        const d = new Date(b.slot_at)
+        return (
+          <div key={b.id} className="appt">
+            <div className="appt-when">
+              <div className="appt-day">{d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}</div>
+              <div className="appt-time">{d.toLocaleTimeString('en-GB', { hour: 'numeric', minute: '2-digit' })}</div>
             </div>
-          )
-        })}
-      </div>
-    </section>
+            <div className="appt-who">
+              <strong>{b.name || 'Unknown'}</strong>
+              <span><span className="appt-type">{b.slot_type}</span>{b.contact ? ' · ' + b.contact : ''}</span>
+            </div>
+          </div>
+        )
+      })}
+    </div>
   )
 }
 
