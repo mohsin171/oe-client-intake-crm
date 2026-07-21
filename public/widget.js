@@ -99,7 +99,7 @@
     sendBtn.onclick = sendMessage;
     foot.appendChild(input); foot.appendChild(sendBtn);
 
-    var brand = el("div", "oe-w-brand", "Powered by Orca Edge");
+    var brand = el("div", "oe-w-brand", "Your details are used only to handle your enquiry. Powered by Orca Edge");
 
     panel.appendChild(head); panel.appendChild(body); panel.appendChild(promptsRow); panel.appendChild(foot); panel.appendChild(brand);
     root.appendChild(bubble); root.appendChild(panel);

@@ -270,6 +270,64 @@ export async function getAnalytics(firmId) {
 
 export async function closePool() { await pool.end(); }
 
+// ---- Data protection: deletion & retention --------------------------------
+
+// Erase a person and everything linked to them (GDPR "right to erasure").
+// Matches by person id, or by email / last-9-digits phone so a firm can honour
+// a data-subject request using whatever contact detail the person gives.
+// Returns the number of people removed.
+export async function deletePersonData(firmId, { id, email, phone, contact } = {}) {
+  const em = (email || (contact && /@/.test(contact) ? contact : "") || "").trim().toLowerCase();
+  const phRaw = digits(phone || (contact && !/@/.test(contact) ? contact : "") || "");
+  const ph = phRaw.length >= 7 ? phRaw.slice(-9) : "";
+
+  // find matching people
+  const { rows } = await pool.query(
+    `SELECT id FROM people
+     WHERE firm_id = $1
+       AND ( ($2 <> '' AND id = $2)
+          OR ($3 <> '' AND lower(email) = $3)
+          OR ($3 <> '' AND lower(contact) = $3)
+          OR ($4 <> '' AND right(regexp_replace(phone, '\D', '', 'g'), 9) = $4)
+          OR ($4 <> '' AND right(regexp_replace(contact, '\D', '', 'g'), 9) = $4) )`,
+    [firmId, id || "", em, ph]
+  );
+  if (rows.length === 0) return 0;
+  const ids = rows.map((r) => r.id);
+
+  // messages + events cascade via FK, but delete explicitly to be safe, then person
+  await pool.query(`DELETE FROM messages WHERE person_id = ANY($1)`, [ids]);
+  await pool.query(`DELETE FROM bookings WHERE person_id = ANY($1)`, [ids]);
+  await pool.query(`UPDATE events SET person_id = NULL WHERE person_id = ANY($1)`, [ids]);
+  await pool.query(`DELETE FROM people WHERE id = ANY($1)`, [ids]);
+  // leave an anonymised audit record that a deletion happened
+  await pool.query(
+    `INSERT INTO events (firm_id, type, detail, actor) VALUES ($1, 'data_deleted', $2, 'system')`,
+    [firmId, `Erased ${ids.length} record(s) on data-subject request`]
+  );
+  return ids.length;
+}
+
+// Retention sweep: delete leads older than N days that never became a client
+// (still 'new'/'lost'/'spam'/'poor_fit'). Keeps won/booked/in-delivery clients.
+// Call from a scheduled job if a client wants automatic retention limits.
+export async function applyRetention(firmId, { days = 365 } = {}) {
+  const { rowCount } = await pool.query(
+    `DELETE FROM people
+     WHERE firm_id = $1
+       AND created_at < now() - ($2 || ' days')::interval
+       AND stage IN ('new','lost','spam','poor_fit')`,
+    [firmId, String(days)]
+  );
+  if (rowCount > 0) {
+    await pool.query(
+      `INSERT INTO events (firm_id, type, detail, actor) VALUES ($1, 'retention_sweep', $2, 'system')`,
+      [firmId, `Auto-removed ${rowCount} stale non-client record(s) older than ${days} days`]
+    );
+  }
+  return rowCount;
+}
+
 // ---- Booking engine --------------------------------------------------------
 
 // Generate the next N available appointment slots for a firm.
