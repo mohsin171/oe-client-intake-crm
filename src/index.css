@@ -342,7 +342,7 @@ h1, h2, h3, .brand-name { font-family: 'Quicksand', 'Nunito Sans', sans-serif; }
   50%     { transform: translate(50px, -40px) scale(1.08); }
 }
 
-/* thin outline rings, like the website hero (crisp arcs, not blurred glows) */
+/* one small outline ring in the upper corner, like the website hero */
 .bg-ring {
   position: fixed;
   border-radius: 50%;
@@ -351,9 +351,7 @@ h1, h2, h3, .brand-name { font-family: 'Quicksand', 'Nunito Sans', sans-serif; }
   pointer-events: none;
   z-index: 0;
 }
-.bg-ring-1 { width: 620px; height: 620px; top: -220px; right: -140px; }
-.bg-ring-2 { width: 420px; height: 420px; top: -120px; right: 60px; border-color: rgba(69,146,220,0.2); }
-.bg-ring-3 { width: 520px; height: 520px; bottom: -260px; left: -160px; border-color: rgba(56,117,174,0.22); }
+.bg-ring-1 { width: 340px; height: 340px; top: -120px; right: -90px; }
 
 /* content entrance: sections rise + fade in, gently staggered */
 .section {
