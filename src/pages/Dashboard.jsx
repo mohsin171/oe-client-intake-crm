@@ -176,6 +176,7 @@ function Sidebar({ firm, stageCounts, needsAttention, total, activeFilter, onSta
   const isActive = (k) => activeFilter && activeFilter.type === 'stage' && activeFilter.value === k
   return (
     <aside className="sidebar">
+      <div className="sidebar-inner">
       <button className="brand brand-home" onClick={onHome} title="Back to overview">
         <div className="brand-mark">◆</div>
         <div className="brand-text">
@@ -204,6 +205,7 @@ function Sidebar({ firm, stageCounts, needsAttention, total, activeFilter, onSta
       </div>
 
       <div className="side-foot">Powered by Orca Edge</div>
+      </div>
     </aside>
   )
 }

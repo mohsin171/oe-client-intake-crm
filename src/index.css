@@ -43,8 +43,12 @@ h1, h2, h3, .brand-name { font-family: 'Quicksand', 'Nunito Sans', sans-serif; }
 .sidebar {
   width: 248px; flex-shrink: 0; padding: 26px 18px;
   background: var(--card); border-right: 1px solid var(--line);
-  position: sticky; top: 0; height: 100vh; overflow-y: auto;
+  align-self: stretch;
   display: flex; flex-direction: column;
+}
+.sidebar-inner {
+  position: sticky; top: 26px;
+  display: flex; flex-direction: column; flex: 1;
 }
 .brand { display: flex; align-items: center; gap: 12px; padding: 0 6px 30px; }
 .brand-mark {
