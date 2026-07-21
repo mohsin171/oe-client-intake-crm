@@ -60,17 +60,19 @@ export default function Dashboard() {
   }, [load])
 
   const needsAttention = leads.filter((l) => l.handoff_needed && l.stage === 'handed_off')
+  const stageCounts = STAGES.reduce((acc, s) => { acc[s.key] = leads.filter((l) => l.stage === s.key).length; return acc }, {})
 
   return (
-    <div className="app">
-      <Header firm={firm} lastUpdated={lastUpdated} flash={flash} />
-      <div className="body">
+    <div className="shell">
+      <Sidebar firm={firm} stageCounts={stageCounts} needsAttention={needsAttention.length} total={leads.length} />
+      <div className="workspace">
+        <TopNav lastUpdated={lastUpdated} flash={flash} />
         <main className="main">
           {stats && <Stats stats={stats} />}
           {needsAttention.length > 0 && (
             <div className="attention">
               <span className="attention-dot" />
-              {needsAttention.length} lead{needsAttention.length > 1 ? 's' : ''} need{needsAttention.length > 1 ? '' : 's'} a human. See "Needs a human" below.
+              {needsAttention.length} lead{needsAttention.length > 1 ? 's' : ''} need{needsAttention.length > 1 ? '' : 's'} a human, listed under "Needs a human" below.
             </div>
           )}
           {bookings.length > 0 && <Appointments bookings={bookings} />}
@@ -82,12 +84,56 @@ export default function Dashboard() {
   )
 }
 
-function Header({ firm, lastUpdated, flash }) {
+function Sidebar({ firm, stageCounts, needsAttention, total }) {
+  const items = [
+    { key: 'new', label: 'New', dot: 'new' },
+    { key: 'qualified', label: 'Qualified', dot: 'qualified' },
+    { key: 'booked', label: 'Booked', dot: 'booked' },
+    { key: 'handed_off', label: 'Needs a human', dot: 'handed_off' },
+    { key: 'won', label: 'Won', dot: 'won' },
+  ]
   return (
-    <header className="header">
-      <div>
-        <h1>{firm || 'Intake'} <span className="header-sub">Operations</span></h1>
-        <p className="tagline">Your live intake command center</p>
+    <aside className="sidebar">
+      <div className="brand">
+        <div className="brand-mark">◆</div>
+        <div className="brand-text">
+          <div className="brand-name">{firm || 'Rivergate'}</div>
+          <div className="brand-sub">Intake OS</div>
+        </div>
+      </div>
+
+      <div className="side-section">
+        <div className="side-label">Pipeline</div>
+        {items.map((it) => (
+          <div key={it.key} className="side-item">
+            <span className={'side-dot ' + it.dot} />
+            <span className="side-item-label">{it.label}</span>
+            <span className="side-count">{stageCounts[it.key] || 0}</span>
+          </div>
+        ))}
+      </div>
+
+      <div className="side-section">
+        <div className="side-label">At a glance</div>
+        <div className="side-item"><span className="side-item-label">Total leads</span><span className="side-count">{total}</span></div>
+        {needsAttention > 0 && (
+          <div className="side-item attention-item"><span className="side-item-label">Needs a human</span><span className="side-count urgent">{needsAttention}</span></div>
+        )}
+      </div>
+
+      <div className="side-foot">Powered by Orca Edge</div>
+    </aside>
+  )
+}
+
+function TopNav({ lastUpdated, flash }) {
+  return (
+    <header className="topnav">
+      <div className="topnav-tabs">
+        <span className="tab active">Overview</span>
+        <span className="tab">Pipeline</span>
+        <span className="tab">Appointments</span>
+        <span className="tab">Analytics</span>
       </div>
       <div className={'live-badge' + (flash ? ' flash' : '')}>
         <span className="live-dot" />
