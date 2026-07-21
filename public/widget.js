@@ -144,7 +144,7 @@
       greeted = true;
       addMsg(greeting, "bot");
     }
-    if (open) setTimeout(function () { input.focus(); }, 250);
+    if (open) setTimeout(function () { input.focus({ preventScroll: true }); }, 250);
   }
 
   function addMsg(text, who) {
@@ -187,7 +187,7 @@
         hideTyping();
         addMsg("Sorry, I'm having a brief connection issue. Please try again in a moment.", "bot");
       })
-      .finally(function () { sending = false; sendBtn.disabled = false; input.focus(); });
+      .finally(function () { sending = false; sendBtn.disabled = false; input.focus({ preventScroll: true }); });
   }
 
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
