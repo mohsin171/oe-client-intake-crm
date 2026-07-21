@@ -31,7 +31,9 @@
   .oe-w-panel.oe-open { opacity: 1; transform: translateY(0); pointer-events: auto; }
   .oe-w-head { background: var(--oe-accent); color: #fff; padding: 16px 18px; }
   .oe-w-head h4 { font-size: 1rem; font-weight: 700; }
-  .oe-w-head p { font-size: 0.78rem; opacity: 0.9; margin-top: 2px; }
+  .oe-w-head p { font-size: 0.78rem; opacity: 0.9; margin-top: 2px; display: flex; align-items: center; gap: 6px; }
+  .oe-w-live { width: 7px; height: 7px; border-radius: 50%; background: #35F0A0; display: inline-block; box-shadow: 0 0 0 0 rgba(53,240,160,0.6); animation: oe-livepulse 2s infinite; }
+  @keyframes oe-livepulse { 0% { box-shadow: 0 0 0 0 rgba(53,240,160,0.55); } 70% { box-shadow: 0 0 0 6px rgba(53,240,160,0); } 100% { box-shadow: 0 0 0 0 rgba(53,240,160,0); } }
   .oe-w-body { flex: 1; overflow-y: auto; padding: 16px; background: #F4F7FB; display: flex; flex-direction: column; gap: 10px; }
   .oe-w-msg { max-width: 85%; font-size: 0.88rem; line-height: 1.42; padding: 10px 13px; border-radius: 14px; white-space: pre-wrap; word-wrap: break-word; }
   .oe-w-msg.oe-user { align-self: flex-end; background: var(--oe-accent); color: #fff; border-bottom-right-radius: 4px; }
@@ -81,7 +83,7 @@
     bubble.onclick = toggle;
 
     panel = el("div", "oe-w-panel");
-    var head = el("div", "oe-w-head", "<h4>" + esc(firmName) + "</h4><p>Typically replies in seconds</p>");
+    var head = el("div", "oe-w-head", "<h4>" + esc(firmName) + "</h4><p><span class='oe-w-live'></span>Adviser desk online &middot; replies in seconds, 24/7</p>");
     body = el("div", "oe-w-body");
     promptsRow = el("div", "oe-w-prompts");
     ["Can you help me remortgage?", "I'm a first-time buyer", "I'm self-employed"].forEach(function (p) {
@@ -99,7 +101,7 @@
     sendBtn.onclick = sendMessage;
     foot.appendChild(input); foot.appendChild(sendBtn);
 
-    var brand = el("div", "oe-w-brand", "Your details are used only to handle your enquiry. Powered by Orca Edge");
+    var brand = el("div", "oe-w-brand", "Secure intake &middot; response time tracked &middot; powered by Orca Edge");
 
     panel.appendChild(head); panel.appendChild(body); panel.appendChild(promptsRow); panel.appendChild(foot); panel.appendChild(brand);
     root.appendChild(bubble); root.appendChild(panel);
