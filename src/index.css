@@ -51,7 +51,7 @@ h1, h2, h3, .brand-name { font-family: 'Quicksand', 'Nunito Sans', sans-serif; }
   width: 38px; height: 38px; border-radius: 11px;
   background: linear-gradient(135deg, var(--bright), var(--steel));
   display: flex; align-items: center; justify-content: center;
-  color: #fff; font-size: 0.95rem; box-shadow: 0 4px 12px rgba(69,146,220,0.3);
+  color: #fff; font-size: 0.95rem;
 }
 .brand-name { font-weight: 700; font-size: 1.02rem; letter-spacing: -0.01em; color: var(--nearblack); }
 .brand-sub { font-size: 0.72rem; color: var(--muted); margin-top: 1px; }
@@ -384,5 +384,6 @@ h1, h2, h3, .brand-name { font-family: 'Quicksand', 'Nunito Sans', sans-serif; }
 .live-badge { box-shadow: 0 0 16px rgba(46,158,107,0.15); }
 
 /* Brand logo is a clickable "home" control */
-.brand-home { width: 100%; border: none; background: none; font-family: inherit; cursor: pointer; text-align: left; border-radius: 12px; transition: background 0.15s; }
-.brand-home:hover { background: var(--light); }
+.brand-home { width: 100%; border: none; background: none; font-family: inherit; cursor: pointer; text-align: left; border-radius: 12px; transition: background 0.15s; box-shadow: none; }
+.brand-home:hover { background: var(--light); box-shadow: none; }
+.brand-home:hover .brand-mark, .brand-home:active .brand-mark { box-shadow: none; }
