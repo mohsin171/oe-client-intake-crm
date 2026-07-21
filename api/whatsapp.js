@@ -14,6 +14,7 @@
 // ============================================================================
 
 import { processTurn } from "../lib/engine.js";
+import { sendTwilio } from "../lib/twilio.js";
 
 const SID = process.env.TWILIO_ACCOUNT_SID;
 const TOKEN = process.env.TWILIO_AUTH_TOKEN;
@@ -65,19 +66,4 @@ function formatSlots(slots) {
     return `${i + 1}. ${d.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" })} ${d.toLocaleTimeString("en-GB", { hour: "numeric", minute: "2-digit" })}`;
   });
   return "\n\n" + lines.join("\n") + "\n\nReply with the number that suits you.";
-}
-
-async function sendTwilio({ to, from, body }) {
-  const url = `https://api.twilio.com/2010-04-01/Accounts/${SID}/Messages.json`;
-  const form = new URLSearchParams({ To: to, From: from, Body: body });
-  const res = await fetch(url, {
-    method: "POST",
-    headers: {
-      Authorization: "Basic " + Buffer.from(`${SID}:${TOKEN}`).toString("base64"),
-      "Content-Type": "application/x-www-form-urlencoded",
-    },
-    body: form.toString(),
-  });
-  if (!res.ok) throw new Error("Twilio " + res.status + " " + (await res.text()));
-  return true;
 }
