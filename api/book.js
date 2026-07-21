@@ -75,5 +75,6 @@ export default async function handler(req, res) {
 }
 
 function formatWhen(d) {
-  return d.toLocaleString("en-GB", { weekday: "long", day: "numeric", month: "long", hour: "numeric", minute: "2-digit", hour12: true });
+  const tz = (CONFIG.firm.availability && CONFIG.firm.availability.timezone) || "Europe/London";
+  return d.toLocaleString("en-GB", { weekday: "long", day: "numeric", month: "long", hour: "numeric", minute: "2-digit", hour12: true, timeZone: tz });
 }

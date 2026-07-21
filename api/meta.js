@@ -17,6 +17,7 @@
 // ============================================================================
 
 import { processTurn } from "../lib/engine.js";
+import { CONFIG } from "../lib/config.js";
 
 const VERIFY_TOKEN = process.env.META_VERIFY_TOKEN;
 const PAGE_TOKEN = process.env.META_PAGE_TOKEN;
@@ -72,9 +73,10 @@ export default async function handler(req, res) {
 
 function formatSlots(slots) {
   if (!slots || !slots.length) return "";
+  const tz = (CONFIG.firm.availability && CONFIG.firm.availability.timezone) || "Europe/London";
   const lines = slots.slice(0, 5).map((iso, i) => {
     const d = new Date(iso);
-    return `${i + 1}. ${d.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" })} ${d.toLocaleTimeString("en-GB", { hour: "numeric", minute: "2-digit" })}`;
+    return `${i + 1}. ${d.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", timeZone: tz })} ${d.toLocaleTimeString("en-GB", { hour: "numeric", minute: "2-digit", timeZone: tz })}`;
   });
   return "\n\n" + lines.join("\n") + "\n\nReply with the number that suits you.";
 }
