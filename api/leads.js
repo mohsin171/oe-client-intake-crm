@@ -3,7 +3,7 @@
 // POST /api/leads  { id, reply } -> adviser sends a reply on the lead's channel
 //                                   (also flags the lead as human-handled so the
 //                                   AI stands down)
-import { ensureSchema, ensureFirm, listLeads, getPerson, getMessages, addMessage, addEvent, setAgentTakeover, query } from "../db/index.js";
+import { ensureSchema, ensureFirm, listLeads, getPerson, getMessages, addMessage, addEvent, setAgentTakeover, setStage, setNotes, deletePerson, query } from "../db/index.js";
 import { CONFIG } from "../lib/config.js";
 import { sendToLead, reachOptions } from "../lib/outbound.js";
 
@@ -20,21 +20,41 @@ export default async function handler(req, res) {
     await boot();
     const firmId = CONFIG.firm.id;
 
-    // ---- Adviser reply from the dashboard ----
+    // ---- Adviser actions from the dashboard (POST) ----
     if (req.method === "POST") {
       const body = typeof req.body === "string" ? JSON.parse(req.body || "{}") : (req.body || {});
-      const { id, reply, method } = body;
-      if (!id || !reply || !String(reply).trim()) {
-        return res.status(400).json({ error: "Missing lead id or reply text." });
-      }
+      const { id, action } = body;
+      if (!id) return res.status(400).json({ error: "Missing lead id." });
       const person = await getPerson(id);
       if (!person) return res.status(404).json({ error: "Lead not found" });
 
-      // send it out on the lead's channel (or the method the adviser chose)
-      const sent = await sendToLead(person, String(reply).trim(), method || null);
+      // DELETE a lead (junk / test data)
+      if (action === "delete") {
+        await deletePerson(id, firmId);
+        return res.status(200).json({ ok: true, deleted: true });
+      }
 
-      // record the adviser message in the thread + audit, and take over so the
-      // AI won't also auto-reply on this lead
+      // MOVE stage / mark won / lost
+      if (action === "stage") {
+        const stage = String(body.stage || "").trim();
+        const allowed = ["new", "qualified", "booked", "handed_off", "won", "lost"];
+        if (!allowed.includes(stage)) return res.status(400).json({ error: "Invalid stage." });
+        await setStage(id, stage);
+        await addEvent({ firmId, personId: id, type: "stage_changed", detail: `Adviser moved lead to '${stage}'`, actor: "agent" });
+        return res.status(200).json({ ok: true, stage });
+      }
+
+      // ADD / update a private note
+      if (action === "notes") {
+        await setNotes(id, body.notes);
+        await addEvent({ firmId, personId: id, type: "note_saved", detail: "Adviser updated the note", actor: "agent" });
+        return res.status(200).json({ ok: true });
+      }
+
+      // REPLY (default action) — send on the lead's channel
+      const reply = body.reply;
+      if (!reply || !String(reply).trim()) return res.status(400).json({ error: "Missing reply text." });
+      const sent = await sendToLead(person, String(reply).trim(), body.method || null);
       await addMessage({ personId: id, firmId, role: "assistant", channel: person.channel, content: String(reply).trim() });
       await setAgentTakeover(id, true);
       await addEvent({
@@ -42,7 +62,6 @@ export default async function handler(req, res) {
         detail: sent.ok ? `Adviser replied via ${sent.channel} (${sent.detail})` : `Adviser reply not delivered: ${sent.detail}`,
         actor: "agent",
       });
-
       return res.status(200).json({ ok: sent.ok, channel: sent.channel, detail: sent.detail });
     }
 

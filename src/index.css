@@ -445,3 +445,22 @@ h1, h2, h3, .brand-name { font-family: 'Quicksand', 'Nunito Sans', sans-serif; }
 .method-btn:hover { border-color: var(--bright); color: var(--steel); }
 .method-btn.active { background: var(--light); border-color: var(--bright); color: var(--bright); }
 .reply-hint.warn { color: #8A6D3B; background: #FBF3E4; border: 1px solid #F0DFBB; border-radius: 8px; padding: 8px 12px; }
+
+/* ---- Lead panel actions (stage move, delete, notes) ---- */
+.panel-actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0 16px; border-bottom: 1px solid var(--line); margin-bottom: 4px; flex-wrap: wrap; }
+.stage-move { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.pa-label { font-size: 0.72rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; margin-right: 2px; }
+.stage-btn { font-size: 0.76rem; font-weight: 700; padding: 6px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--card); color: var(--steel); cursor: pointer; font-family: inherit; transition: all 0.12s; }
+.stage-btn:hover:not(:disabled) { border-color: var(--bright); background: var(--light); }
+.stage-btn.current { opacity: 0.5; cursor: default; }
+.stage-btn-won:hover:not(:disabled) { border-color: var(--green); color: var(--green); background: #EAF6EF; }
+.stage-btn-lost:hover:not(:disabled) { border-color: #C2705C; color: #B4523C; background: #FBEEEA; }
+.delete-btn { font-size: 0.76rem; font-weight: 700; padding: 6px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--card); color: var(--muted); cursor: pointer; font-family: inherit; }
+.delete-btn:hover { border-color: #C2705C; color: #B4523C; background: #FBEEEA; }
+/* notes */
+.notes-box .note-sub { font-size: 0.72rem; font-weight: 500; color: var(--muted); margin-left: 6px; }
+.note-input { width: 100%; border: 1px solid var(--line); border-radius: 12px; padding: 11px 14px; font-family: inherit; font-size: 0.88rem; resize: vertical; color: var(--ink); background: var(--card); }
+.note-input:focus { outline: none; border-color: var(--bright); box-shadow: 0 0 0 3px rgba(69,146,220,0.12); }
+.note-save { background: var(--card); border: 1px solid var(--steel); color: var(--steel); border-radius: 10px; padding: 8px 18px; font-weight: 700; font-size: 0.82rem; cursor: pointer; font-family: inherit; }
+.note-save:hover:not(:disabled) { background: var(--light); }
+.note-save:disabled { opacity: 0.45; cursor: default; }

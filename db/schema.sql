@@ -67,6 +67,7 @@ CREATE TABLE IF NOT EXISTS people (
   handoff_trigger      TEXT,                    -- sensitive | high_value | low_confidence | none
   handoff_summary      TEXT,
   agent_takeover       BOOLEAN NOT NULL DEFAULT false, -- a human replied; AI stands down
+  notes                TEXT NOT NULL DEFAULT '',        -- adviser's private notes on the lead
 
   -- Booking (Tool 1)
   booking_at           TIMESTAMPTZ,             -- the booked meeting time, if any

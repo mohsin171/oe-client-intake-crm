@@ -159,7 +159,7 @@ export default function Dashboard() {
             </div>
           )}
         </main>
-        {selectedId && <LeadPanel id={selectedId} onClose={() => setSelectedId(null)} />}
+        {selectedId && <LeadPanel id={selectedId} onClose={() => setSelectedId(null)} onChanged={load} />}
       </div>
     </div>
   )
@@ -460,23 +460,25 @@ function QualBadge({ q }) {
   return <span className={'badge ' + q}>{label}</span>
 }
 
-function LeadPanel({ id, onClose }) {
+function LeadPanel({ id, onClose, onChanged }) {
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [reply, setReply] = useState('')
   const [sending, setSending] = useState(false)
   const [sendResult, setSendResult] = useState(null)
   const [method, setMethod] = useState(null)
+  const [note, setNote] = useState('')
+  const [noteSaved, setNoteSaved] = useState(false)
 
   function load() {
     fetch(`/api/leads?id=${encodeURIComponent(id)}`)
       .then((r) => r.json())
-      .then(setData)
+      .then((d) => { setData(d); if (d && d.person) setNote(d.person.notes || '') })
       .finally(() => setLoading(false))
   }
 
   useEffect(() => {
-    setLoading(true); setReply(''); setSendResult(null); setMethod(null)
+    setLoading(true); setReply(''); setSendResult(null); setMethod(null); setNoteSaved(false)
     load()
   }, [id])
 
@@ -504,6 +506,28 @@ function LeadPanel({ id, onClose }) {
     }
   }
 
+  async function postAction(payload) {
+    const r = await fetch('/api/leads', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, ...payload }),
+    })
+    return r.json()
+  }
+  async function changeStage(stage) {
+    const j = await postAction({ action: 'stage', stage })
+    if (j.ok) { load(); onChanged && onChanged() }
+  }
+  async function deleteLead() {
+    if (!window.confirm('Delete this lead permanently? This removes its conversation too.')) return
+    const j = await postAction({ action: 'delete' })
+    if (j.ok) { onClose(); onChanged && onChanged() }
+  }
+  async function saveNote() {
+    const j = await postAction({ action: 'notes', notes: note })
+    if (j.ok) { setNoteSaved(true); setTimeout(() => setNoteSaved(false), 2000) }
+  }
+
   if (loading) return <aside className="panel"><div className="panel-loading">Loading…</div></aside>
   if (!data || data.error) return <aside className="panel"><div className="panel-loading">Not found.</div></aside>
 
@@ -518,6 +542,21 @@ function LeadPanel({ id, onClose }) {
           <QualBadge q={p.qualification} />
         </div>
         <button className="close" onClick={onClose}>✕</button>
+      </div>
+
+      <div className="panel-actions">
+        <div className="stage-move">
+          <span className="pa-label">Move to</span>
+          {[['qualified','Qualified'],['booked','Booked'],['won','Won'],['lost','Lost']].map(([k,lbl]) => (
+            <button
+              key={k}
+              className={'stage-btn stage-btn-' + k + (p.stage === k ? ' current' : '')}
+              onClick={() => changeStage(k)}
+              disabled={p.stage === k}
+            >{lbl}</button>
+          ))}
+        </div>
+        <button className="delete-btn" onClick={deleteLead} title="Delete lead">Delete</button>
       </div>
 
       {p.handoff_needed && (
@@ -569,6 +608,21 @@ function LeadPanel({ id, onClose }) {
               <div className="msg-content">{m.content}</div>
             </div>
           ))}
+        </div>
+      </div>
+
+      <div className="panel-section notes-box">
+        <h3>Private note <span className="note-sub">only your team sees this</span></h3>
+        <textarea
+          className="note-input"
+          placeholder="e.g. Called, left voicemail. Trying again Thursday."
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+          rows={2}
+        />
+        <div className="reply-actions">
+          <button className="note-save" onClick={saveNote} disabled={note === (p.notes || '')}>Save note</button>
+          {noteSaved && <span className="reply-result ok">Saved</span>}
         </div>
       </div>
 

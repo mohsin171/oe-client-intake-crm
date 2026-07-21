@@ -49,6 +49,7 @@ export async function ensureSchema() {
   await pool.query(sql);
   // idempotent migrations for columns added after first deploy
   await pool.query(`ALTER TABLE people ADD COLUMN IF NOT EXISTS agent_takeover BOOLEAN NOT NULL DEFAULT false`);
+  await pool.query(`ALTER TABLE people ADD COLUMN IF NOT EXISTS notes TEXT NOT NULL DEFAULT ''`);
 }
 
 // Make sure a firm row exists (called once at startup for the configured firm).
@@ -202,6 +203,25 @@ export async function getHistoryForAI(personId) {
 // Mark that a human adviser has taken over this lead (AI stands down), or clear it.
 export async function setAgentTakeover(personId, on = true) {
   await pool.query(`UPDATE people SET agent_takeover = $2 WHERE id = $1`, [personId, on]);
+}
+
+// Adviser manually sets a lead's stage (e.g. -> won / lost / qualified).
+export async function setStage(personId, stage) {
+  await pool.query(`UPDATE people SET stage = $2, updated_at = now() WHERE id = $1`, [personId, stage]);
+}
+
+// Adviser's private note on a lead.
+export async function setNotes(personId, notes) {
+  await pool.query(`UPDATE people SET notes = $2, updated_at = now() WHERE id = $1`, [personId, String(notes || "")]);
+}
+
+// Delete a lead entirely (junk / test data). Removes its messages + events too.
+export async function deletePerson(personId, firmId) {
+  await pool.query(`DELETE FROM messages WHERE person_id = $1`, [personId]);
+  await pool.query(`DELETE FROM events WHERE person_id = $1`, [personId]);
+  await pool.query(`DELETE FROM bookings WHERE person_id = $1`, [personId]);
+  const { rowCount } = await pool.query(`DELETE FROM people WHERE id = $1 AND firm_id = $2`, [personId, firmId]);
+  return rowCount > 0;
 }
 
 // ---- Events (audit trail) --------------------------------------------------
