@@ -61,11 +61,21 @@
   .oe-w-send:disabled { opacity: 0.5; cursor: default; }
   .oe-w-send svg { width: 18px; height: 18px; fill: #fff; }
   .oe-w-brand { text-align: center; font-size: 0.68rem; color: #9AA6B6; padding: 6px; background: #fff; }
-  .oe-w-slots { display: flex; flex-wrap: wrap; gap: 6px; align-self: flex-start; max-width: 100%; }
-  .oe-w-slot { font-size: 0.74rem; background: #F4F7FB; border: 1px solid #D3E0EE; color: #3A5570; padding: 5px 10px; border-radius: 7px; cursor: pointer; font-weight: 700; line-height: 1.2; }
-  .oe-w-slot:hover:not(:disabled) { background: var(--oe-accent); color: #fff; border-color: var(--oe-accent); }
-  .oe-w-slot:disabled { opacity: 0.4; cursor: default; }
-  .oe-w-slot-chosen { background: var(--oe-accent); color: #fff; border-color: var(--oe-accent); }
+  .oe-w-book { align-self: flex-start; width: 100%; max-width: 100%; background: #fff; border: 1px solid #E2E9F1; border-radius: 14px; padding: 12px; box-shadow: 0 2px 10px rgba(20,40,70,0.06); }
+  .oe-w-book-title { font-size: 0.82rem; font-weight: 800; color: #1a2330; margin-bottom: 10px; }
+  .oe-w-book-days { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 9px; margin-bottom: 11px; border-bottom: 1px solid #EEF2F7; scrollbar-width: thin; }
+  .oe-w-day { flex: 0 0 auto; min-width: 54px; text-align: center; background: #F4F7FB; border: 1px solid #DDE6F0; border-radius: 10px; padding: 7px 9px; cursor: pointer; line-height: 1.15; transition: background 0.12s, border-color 0.12s; }
+  .oe-w-day:hover { border-color: var(--oe-accent); }
+  .oe-w-day.oe-active { background: var(--oe-accent); border-color: var(--oe-accent); }
+  .oe-w-day-dow { font-size: 0.65rem; font-weight: 700; color: #6a7c93; text-transform: uppercase; letter-spacing: 0.03em; }
+  .oe-w-day-num { font-size: 0.82rem; font-weight: 800; color: #1a2330; margin-top: 1px; }
+  .oe-w-day.oe-active .oe-w-day-dow, .oe-w-day.oe-active .oe-w-day-num { color: #fff; }
+  .oe-w-times { display: flex; flex-wrap: wrap; gap: 6px; }
+  .oe-w-time { font-size: 0.76rem; font-weight: 700; background: #F4F7FB; border: 1px solid #D3E0EE; color: #2f4a66; padding: 7px 12px; border-radius: 9px; cursor: pointer; transition: background 0.12s, border-color 0.12s, color 0.12s; }
+  .oe-w-time:hover:not(:disabled) { background: var(--oe-accent); color: #fff; border-color: var(--oe-accent); }
+  .oe-w-time:disabled { opacity: 0.5; cursor: default; }
+  .oe-w-book-note { font-size: 0.66rem; color: #9AA6B6; margin-top: 10px; }
+  .oe-w-book-empty { font-size: 0.8rem; color: #6a7c93; line-height: 1.4; }
   `;
 
   function el(tag, cls, html) {
@@ -162,6 +172,112 @@
   }
   function hideTyping() { if (typingEl) { typingEl.remove(); typingEl = null; } }
 
+  // ---- Calendly-style booking picker -------------------------------------
+  // Renders a compact day-strip + time-chips card inside the chat. Slots come
+  // live from /api/book (already-booked times are excluded server-side), and
+  // tapping a time books it atomically and drops the confirmation into the chat.
+  var bookingBusy = false;
+
+  function tzLabel() {
+    var parts = String(tz).split("/");
+    return (parts[parts.length - 1] || tz).replace(/_/g, " ") + " time";
+  }
+  function fmtDayKey(d) {
+    return new Intl.DateTimeFormat("en-CA", { timeZone: tz, year: "numeric", month: "2-digit", day: "2-digit" }).format(d);
+  }
+  function fmtDow(d) { return new Intl.DateTimeFormat("en-GB", { timeZone: tz, weekday: "short" }).format(d); }
+  function fmtDayNum(d) { return new Intl.DateTimeFormat("en-GB", { timeZone: tz, day: "numeric", month: "short" }).format(d); }
+  function fmtTime(d) { return new Intl.DateTimeFormat("en-GB", { timeZone: tz, hour: "numeric", minute: "2-digit", hour12: true }).format(d); }
+
+  function openBookingPicker(bookingType) {
+    fetch(API + "/api/book")
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        var slots = (data && data.slots) || [];
+        var type = bookingType || (data && data.bookingType) || "call";
+        var card = el("div", "oe-w-book");
+
+        if (!slots.length) {
+          card.innerHTML =
+            '<div class="oe-w-book-title">Book your ' + esc(type) + '</div>' +
+            '<div class="oe-w-book-empty">There are no open times showing right now. Let me know a day and time that suits and an adviser will confirm it with you.</div>';
+          body.appendChild(card); body.scrollTop = body.scrollHeight;
+          return;
+        }
+
+        // group slots by calendar day (in the firm's timezone)
+        var days = [], byDay = {};
+        slots.forEach(function (iso) {
+          var d = new Date(iso), key = fmtDayKey(d);
+          if (!byDay[key]) { byDay[key] = []; days.push({ key: key, date: d }); }
+          byDay[key].push({ iso: iso, date: d });
+        });
+
+        var title = el("div", "oe-w-book-title", "Choose a time for your " + esc(type));
+        var dayRow = el("div", "oe-w-book-days");
+        var timesWrap = el("div", "oe-w-times");
+        var note = el("div", "oe-w-book-note", "Times shown in " + esc(tzLabel()) + " \u00b7 pick one and it's booked instantly");
+        var activeKey = days[0].key;
+
+        function renderTimes() {
+          timesWrap.innerHTML = "";
+          byDay[activeKey].forEach(function (s) {
+            var t = el("button", "oe-w-time", esc(fmtTime(s.date)));
+            t.onclick = function () { confirmSlot(s.iso, type, card); };
+            timesWrap.appendChild(t);
+          });
+        }
+
+        days.forEach(function (day) {
+          var b = el("button", "oe-w-day" + (day.key === activeKey ? " oe-active" : ""),
+            '<div class="oe-w-day-dow">' + esc(fmtDow(day.date)) + '</div>' +
+            '<div class="oe-w-day-num">' + esc(fmtDayNum(day.date)) + '</div>');
+          b.onclick = function () {
+            activeKey = day.key;
+            Array.prototype.forEach.call(dayRow.children, function (c) { c.classList.remove("oe-active"); });
+            b.classList.add("oe-active");
+            renderTimes();
+          };
+          dayRow.appendChild(b);
+        });
+
+        renderTimes();
+        card.appendChild(title); card.appendChild(dayRow); card.appendChild(timesWrap); card.appendChild(note);
+        body.appendChild(card); body.scrollTop = body.scrollHeight;
+      })
+      .catch(function () { /* silent - the AI's text already invited a time */ });
+  }
+
+  function confirmSlot(iso, type, card) {
+    if (bookingBusy || !sessionId) return;
+    bookingBusy = true;
+    Array.prototype.forEach.call(card.querySelectorAll("button"), function (b) { b.disabled = true; });
+    fetch(API + "/api/book", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sessionId: sessionId, slotAt: iso }),
+    })
+      .then(function (r) { return r.json().then(function (j) { return { status: r.status, j: j }; }); })
+      .then(function (res) {
+        if (res.status === 200 && res.j && res.j.ok) {
+          card.remove();
+          addMsg(res.j.confirm || ("Your " + type + " is booked. You'll receive a confirmation shortly."), "bot");
+        } else if (res.status === 409) {
+          card.remove();
+          addMsg("Ah, that time was just taken. Here are the latest available times:", "bot");
+          openBookingPicker(type);
+        } else {
+          Array.prototype.forEach.call(card.querySelectorAll("button"), function (b) { b.disabled = false; });
+          addMsg("Sorry, I couldn't book that just now. Please try another time.", "bot");
+        }
+      })
+      .catch(function () {
+        Array.prototype.forEach.call(card.querySelectorAll("button"), function (b) { b.disabled = false; });
+        addMsg("I hit a brief connection issue while booking. Please try that time again.", "bot");
+      })
+      .finally(function () { bookingBusy = false; });
+  }
+
   function sendMessage() {
     var text = input.value.trim();
     if (!text || sending) return;
@@ -182,6 +298,7 @@
         hideTyping();
         if (data.sessionId) sessionId = data.sessionId;
         addMsg(data.reply || "Sorry, something went wrong. Please try again.", "bot");
+        if (data.showBooking) openBookingPicker(data.bookingType);
       })
       .catch(function () {
         hideTyping();
