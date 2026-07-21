@@ -51,6 +51,11 @@
   .oe-w-send:disabled { opacity: 0.5; cursor: default; }
   .oe-w-send svg { width: 18px; height: 18px; fill: #fff; }
   .oe-w-brand { text-align: center; font-size: 0.68rem; color: #9AA6B6; padding: 6px; background: #fff; }
+  .oe-w-slots { display: flex; flex-wrap: wrap; gap: 7px; align-self: flex-start; max-width: 100%; }
+  .oe-w-slot { font-size: 0.82rem; background: #fff; border: 1px solid var(--oe-accent); color: var(--oe-accent); padding: 8px 12px; border-radius: 9px; cursor: pointer; font-weight: 600; }
+  .oe-w-slot:hover:not(:disabled) { background: var(--oe-accent); color: #fff; }
+  .oe-w-slot:disabled { opacity: 0.45; cursor: default; }
+  .oe-w-slot-chosen { background: var(--oe-accent); color: #fff; }
   `;
 
   function el(tag, cls, html) {
@@ -145,6 +150,7 @@
         hideTyping();
         if (data.sessionId) sessionId = data.sessionId;
         addMsg(data.reply || "Sorry, something went wrong. Please try again.", "bot");
+        if (data.slots && data.slots.length) renderSlots(data.slots);
       })
       .catch(function () {
         hideTyping();
@@ -154,6 +160,52 @@
   }
 
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+
+  // Render available appointment slots as tappable buttons.
+  function renderSlots(slots) {
+    var wrap = el("div", "oe-w-slots");
+    slots.forEach(function (iso) {
+      var d = new Date(iso);
+      var label = d.toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" }) +
+        ", " + d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+      var b = el("button", "oe-w-slot", esc(label));
+      b.onclick = function () { chooseSlot(iso, wrap, b); };
+      wrap.appendChild(b);
+    });
+    body.appendChild(wrap);
+    body.scrollTop = body.scrollHeight;
+  }
+
+  function chooseSlot(iso, wrap, btn) {
+    // disable all slot buttons while booking
+    Array.prototype.forEach.call(wrap.querySelectorAll(".oe-w-slot"), function (b) { b.disabled = true; });
+    btn.classList.add("oe-w-slot-chosen");
+    showTyping();
+    fetch(API + "/api/book", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sessionId: sessionId, slotAt: iso }),
+    })
+      .then(function (r) { return r.json().then(function (j) { return { status: r.status, j: j }; }); })
+      .then(function (res) {
+        hideTyping();
+        if (res.status === 200 && res.j.ok) {
+          wrap.remove();
+          addMsg(res.j.confirm, "bot");
+        } else if (res.status === 409) {
+          addMsg("Sorry, that time was just taken. Please choose another.", "bot");
+          Array.prototype.forEach.call(wrap.querySelectorAll(".oe-w-slot"), function (b) { b.disabled = false; });
+          btn.classList.remove("oe-w-slot-chosen");
+          btn.disabled = true; // the taken one stays disabled
+        } else {
+          addMsg("Sorry, I couldn't book that just now. An adviser will follow up to arrange a time.", "bot");
+        }
+      })
+      .catch(function () {
+        hideTyping();
+        addMsg("Sorry, I couldn't book that just now. An adviser will follow up to arrange a time.", "bot");
+      });
+  }
 
   // Fetch branding, then build.
   fetch(API + "/api/widget-config")

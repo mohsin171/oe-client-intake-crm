@@ -110,3 +110,19 @@ CREATE TABLE IF NOT EXISTS events (
 
 CREATE INDEX IF NOT EXISTS idx_events_firm   ON events(firm_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_events_person ON events(person_id, created_at);
+
+-- Confirmed appointment bookings. One row per booked slot, so the same slot
+-- can't be double-booked. Tool 1 books a fact-find call here; the dashboard
+-- reads it. Real calendar sync (Google/Outlook) attaches at client onboarding.
+CREATE TABLE IF NOT EXISTS bookings (
+  id            BIGSERIAL PRIMARY KEY,
+  firm_id       TEXT NOT NULL REFERENCES firms(id),
+  person_id     TEXT REFERENCES people(id) ON DELETE SET NULL,
+  slot_at       TIMESTAMPTZ NOT NULL,
+  slot_type     TEXT NOT NULL DEFAULT 'consultation',
+  status        TEXT NOT NULL DEFAULT 'confirmed',  -- confirmed | cancelled
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (firm_id, slot_at)
+);
+
+CREATE INDEX IF NOT EXISTS idx_bookings_firm ON bookings(firm_id, slot_at);

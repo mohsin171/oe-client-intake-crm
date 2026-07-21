@@ -15,7 +15,7 @@ import { runTurn, isDemoMode, CONFIG } from "../lib/brain.js";
 import { performActions } from "../lib/actions.js";
 import {
   ensureSchema, ensureFirm, createPerson, getPerson, updateLead,
-  setHandoff, setBooking, addMessage, getHistoryForAI, addEvent,
+  setHandoff, setBooking, addMessage, getHistoryForAI, addEvent, getAvailableSlots,
 } from "../db/index.js";
 
 let ready = false;
@@ -78,9 +78,15 @@ export default async function handler(req, res) {
     const { bookingLink, done, notified } = await performActions(finalActions, person);
 
     let replyText = reply;
+    let slots = null;
+    // When the AI wants to book a qualified lead, offer REAL slots (not a link).
     if (bookingLink) {
-      replyText += `\n\nYou can book your free ${CONFIG.firm.bookingType} here: ${bookingLink}`;
-      await setBooking(sessionId, { at: null, type: CONFIG.firm.bookingType }); // link offered; actual time set by booking engine (Step 3)
+      slots = await getAvailableSlots(firmId);
+      if (slots.length > 0) {
+        replyText += `\n\nHere are the next available times for your free ${CONFIG.firm.bookingType}. Tap one that suits you:`;
+      } else {
+        replyText += `\n\nAn adviser will be in touch shortly to arrange your free ${CONFIG.firm.bookingType}.`;
+      }
     }
 
     // audit
@@ -92,7 +98,7 @@ export default async function handler(req, res) {
     // 6. store AI reply
     await addMessage({ personId: sessionId, firmId, role: "assistant", channel, content: replyText });
 
-    res.status(200).json({ reply: replyText, sessionId, mode: isDemoMode() ? "demo" : "live" });
+    res.status(200).json({ reply: replyText, sessionId, slots, bookingType: CONFIG.firm.bookingType, mode: isDemoMode() ? "demo" : "live" });
   } catch (err) {
     console.error("Error in /api/chat:", err);
     res.status(500).json({ error: "Something went wrong. Please try again." });

@@ -207,3 +207,77 @@ export async function getAnalytics(firmId) {
 }
 
 export async function closePool() { await pool.end(); }
+
+// ---- Booking engine --------------------------------------------------------
+
+// Generate the next N available appointment slots for a firm.
+// Business hours, weekdays only, on the hour, skipping already-booked slots
+// and anything less than ~2 hours away. Self-contained (no external calendar);
+// real Google/Outlook sync attaches at client onboarding.
+export async function getAvailableSlots(firmId, { count = 6, hours = [10, 12, 14, 16] } = {}) {
+  // pull already-booked slot times so we can exclude them
+  const { rows: taken } = await pool.query(
+    `SELECT slot_at FROM bookings WHERE firm_id = $1 AND status = 'confirmed' AND slot_at > now()`,
+    [firmId]
+  );
+  const takenSet = new Set(taken.map((r) => new Date(r.slot_at).getTime()));
+
+  const slots = [];
+  const now = new Date();
+  const earliest = now.getTime() + 2 * 3600 * 1000; // at least 2h from now
+  let day = new Date(now);
+  day.setHours(0, 0, 0, 0);
+
+  for (let d = 0; d < 14 && slots.length < count; d++) {
+    day.setDate(day.getDate() + (d === 0 ? 0 : 1));
+    const dow = day.getDay();
+    if (dow === 0 || dow === 6) continue; // skip weekends
+    for (const h of hours) {
+      if (slots.length >= count) break;
+      const slot = new Date(day);
+      slot.setHours(h, 0, 0, 0);
+      if (slot.getTime() < earliest) continue;
+      if (takenSet.has(slot.getTime())) continue;
+      slots.push(slot.toISOString());
+    }
+  }
+  return slots;
+}
+
+// Book a slot for a person, atomically (the UNIQUE constraint prevents
+// double-booking). Returns { ok, booking } or { ok:false, reason }.
+export async function bookSlot(firmId, personId, slotAt, slotType = 'consultation') {
+  try {
+    const { rows } = await pool.query(
+      `INSERT INTO bookings (firm_id, person_id, slot_at, slot_type)
+       VALUES ($1, $2, $3, $4)
+       ON CONFLICT (firm_id, slot_at) DO NOTHING
+       RETURNING *`,
+      [firmId, personId, slotAt, slotType]
+    );
+    if (rows.length === 0) return { ok: false, reason: 'slot_taken' };
+    // reflect on the person + advance stage
+    await pool.query(
+      `UPDATE people SET booking_at = $2, booking_type = $3,
+         stage = CASE WHEN stage IN ('new','qualified') THEN 'booked' ELSE stage END,
+         updated_at = now()
+       WHERE id = $1`,
+      [personId, slotAt, slotType]
+    );
+    return { ok: true, booking: rows[0] };
+  } catch (err) {
+    console.error('bookSlot failed:', err.message || err);
+    return { ok: false, reason: 'error' };
+  }
+}
+
+export async function getUpcomingBookings(firmId) {
+  const { rows } = await pool.query(
+    `SELECT b.*, p.name, p.contact FROM bookings b
+     LEFT JOIN people p ON p.id = b.person_id
+     WHERE b.firm_id = $1 AND b.status = 'confirmed' AND b.slot_at > now()
+     ORDER BY b.slot_at ASC`,
+    [firmId]
+  );
+  return rows;
+}
