@@ -85,15 +85,48 @@ export default function Dashboard() {
       <div className="workspace">
         <TopNav lastUpdated={lastUpdated} flash={flash} />
         <main className="main">
-          {stats && <Stats stats={stats} />}
-          {needsAttention.length > 0 && (
-            <div className="attention">
-              <span className="attention-dot" />
-              {needsAttention.length} lead{needsAttention.length > 1 ? 's' : ''} need{needsAttention.length > 1 ? '' : 's'} a human, listed under "Needs a human" below.
+          {stats && (
+            <div className="section">
+              <div className="section-head">
+                <span className="section-title">Today at a glance</span>
+                <span className="section-hint">live performance</span>
+              </div>
+              <Stats stats={stats} />
             </div>
           )}
-          {bookings.length > 0 && <Appointments bookings={bookings} />}
-          <Pipeline leads={leads} loading={loading} selectedId={selectedId} onSelect={setSelectedId} />
+          {stats && (
+            <div className="section">
+              <div className="section-head">
+                <span className="section-title">Performance</span>
+                <span className="section-hint">conversion, channels, trend</span>
+              </div>
+              <Analytics stats={stats} />
+            </div>
+          )}
+          {needsAttention.length > 0 && (
+            <div className="section">
+              <div className="attention">
+                <span className="attention-dot" />
+                {needsAttention.length} lead{needsAttention.length > 1 ? 's' : ''} need{needsAttention.length > 1 ? '' : 's'} a human, listed under "Needs a human" below.
+              </div>
+            </div>
+          )}
+          {bookings.length > 0 && (
+            <div className="section">
+              <div className="section-head">
+                <span className="section-title">Upcoming appointments</span>
+                <span className="section-hint">{bookings.length} booked</span>
+              </div>
+              <Appointments bookings={bookings} />
+            </div>
+          )}
+          <div className="section">
+            <div className="section-head">
+              <span className="section-title">Pipeline</span>
+              <span className="section-hint">every lead, by stage</span>
+            </div>
+            <Pipeline leads={leads} loading={loading} selectedId={selectedId} onSelect={setSelectedId} />
+          </div>
         </main>
         {selectedId && <LeadPanel id={selectedId} onClose={() => setSelectedId(null)} />}
       </div>
@@ -167,40 +200,42 @@ function Stats({ stats }) {
   const fmtMoney = (n) => n >= 1e6 ? `£${(n / 1e6).toFixed(1)}m` : n >= 1e3 ? `£${Math.round(n / 1e3)}k` : `£${n}`
 
   return (
-    <>
-      <section className="stats">
-        <div className="stat hero">
-          <div className="stat-value">{rtLabel}</div>
-          <div className="stat-label">Avg response time</div>
-          <div className="stat-note">vs hours by hand</div>
-        </div>
-        <div className="stat">
-          <div className="stat-value">{stats.total_leads}</div>
-          <div className="stat-label">Leads captured</div>
-        </div>
-        <div className="stat">
-          <div className="stat-value">{stats.qualified}</div>
-          <div className="stat-label">Qualified</div>
-          {stats.total_leads > 0 && <div className="stat-note">{stats.qualify_rate}% of all leads</div>}
-        </div>
-        <div className="stat">
-          <div className="stat-value">{stats.after_hours}</div>
-          <div className="stat-label">After hours</div>
-          <div className="stat-note">would've been missed</div>
-        </div>
-        <div className="stat value">
-          <div className="stat-value">{fmtMoney(pipelineValue)}</div>
-          <div className="stat-label">Qualified pipeline</div>
-          <div className="stat-note">illustrative, from loan sizes</div>
-        </div>
-      </section>
-
-      <div className="analytics-row">
-        <Funnel stats={stats} />
-        <Channels stats={stats} />
-        <Trend trend={stats.trend || []} />
+    <section className="stats">
+      <div className="stat hero">
+        <div className="stat-value">{rtLabel}</div>
+        <div className="stat-label">Avg response time</div>
+        <div className="stat-note">vs hours by hand</div>
       </div>
-    </>
+      <div className="stat">
+        <div className="stat-value">{stats.total_leads}</div>
+        <div className="stat-label">Leads captured</div>
+      </div>
+      <div className="stat">
+        <div className="stat-value">{stats.qualified}</div>
+        <div className="stat-label">Qualified</div>
+        {stats.total_leads > 0 && <div className="stat-note">{stats.qualify_rate}% of all leads</div>}
+      </div>
+      <div className="stat">
+        <div className="stat-value">{stats.after_hours}</div>
+        <div className="stat-label">After hours</div>
+        <div className="stat-note">would've been missed</div>
+      </div>
+      <div className="stat value">
+        <div className="stat-value">{fmtMoney(pipelineValue)}</div>
+        <div className="stat-label">Qualified pipeline</div>
+        <div className="stat-note">illustrative, from loan sizes</div>
+      </div>
+    </section>
+  )
+}
+
+function Analytics({ stats }) {
+  return (
+    <div className="analytics-row">
+      <Funnel stats={stats} />
+      <Channels stats={stats} />
+      <Trend trend={stats.trend || []} />
+    </div>
   )
 }
 
@@ -298,11 +333,13 @@ function Appointments({ bookings }) {
 }
 
 function Pipeline({ leads, loading, selectedId, onSelect }) {
-  if (loading && leads.length === 0) return <div className="pipeline-empty">Loading your pipeline…</div>
+  if (loading && leads.length === 0) return <div className="pipeline"><div className="pipeline-empty">Loading your pipeline…</div></div>
   if (leads.length === 0) {
     return (
-      <div className="pipeline-empty">
-        <strong>No leads yet.</strong> Your intake is live and watching, 24/7.
+      <div className="pipeline">
+        <div className="pipeline-empty">
+          <strong>No leads yet.</strong> Your intake is live and watching, 24/7.
+        </div>
       </div>
     )
   }
@@ -310,7 +347,6 @@ function Pipeline({ leads, loading, selectedId, onSelect }) {
     <div className="pipeline">
       {STAGES.map((stage) => {
         const inStage = leads.filter((l) => l.stage === stage.key)
-        if (inStage.length === 0) return null
         return (
           <div key={stage.key} className="column">
             <div className="column-head">
@@ -318,9 +354,12 @@ function Pipeline({ leads, loading, selectedId, onSelect }) {
               {stage.label}
               <span className="count">{inStage.length}</span>
             </div>
-            {inStage.map((l) => (
-              <LeadCard key={l.id} lead={l} selected={l.id === selectedId} onClick={() => onSelect(l.id)} />
-            ))}
+            <div className="column-body">
+              {inStage.length === 0 && <div className="column-empty">Nothing here yet</div>}
+              {inStage.map((l) => (
+                <LeadCard key={l.id} lead={l} selected={l.id === selectedId} onClick={() => onSelect(l.id)} />
+              ))}
+            </div>
           </div>
         )
       })}
