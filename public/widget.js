@@ -107,7 +107,7 @@
     head.querySelector(".oe-w-close").onclick = toggle;
     body = el("div", "oe-w-body");
     promptsRow = el("div", "oe-w-prompts");
-    ["Can you help me remortgage?", "I'm a first-time buyer", "I'm self-employed"].forEach(function (p) {
+    ["I'm buying my first home", "My fixed rate is ending", "I'm self-employed", "Buy-to-let enquiry"].forEach(function (p) {
       var b = el("button", "oe-w-prompt", esc(p));
       b.onclick = function () { input.value = p; sendMessage(); };
       promptsRow.appendChild(b);
