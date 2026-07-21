@@ -46,7 +46,9 @@ function filterLabel(f) {
 
 export default function Dashboard() {
   const [firm, setFirm] = useState('')
+  const [firmTz, setFirmTz] = useState('Europe/London')
   const [leads, setLeads] = useState([])
+  const [archived, setArchived] = useState([])
   const [stats, setStats] = useState(null)
   const [bookings, setBookings] = useState([])
   const [selectedId, setSelectedId] = useState(null)
@@ -59,10 +61,11 @@ export default function Dashboard() {
 
   const load = useCallback(async () => {
     try {
-      const [l, a, bk] = await Promise.all([
+      const [l, a, bk, arch] = await Promise.all([
         fetch('/api/leads').then((r) => r.json()),
         fetch('/api/analytics').then((r) => r.json()),
         fetch('/api/bookings').then((r) => r.json()),
+        fetch('/api/leads?archived=1').then((r) => r.json()),
       ])
       const newLeads = l.leads || []
       if (prevCount.current && newLeads.length > prevCount.current) {
@@ -71,7 +74,9 @@ export default function Dashboard() {
       }
       prevCount.current = newLeads.length
       setLeads(newLeads)
+      setArchived(arch.leads || [])
       setFirm(l.firm?.name || '')
+      setFirmTz(l.firm?.timezone || 'Europe/London')
       setStats(a)
       setBookings(bk.bookings || [])
       setLastUpdated(new Date())
@@ -116,6 +121,8 @@ export default function Dashboard() {
       <span className="bg-ring bg-ring-2" />
       <Sidebar firm={firm} stageCounts={stageCounts} needsAttention={needsAttention.length} total={leads.length}
         activeFilter={filter} onStage={(k) => applyFilter({ type: 'stage', value: k })}
+        archivedCount={archived.length} archiveActive={activeTab === 'archive'}
+        onArchive={() => { setActiveTab('archive'); setFilter(null); setSelectedId(null) }}
         onHome={() => { setActiveTab('overview'); setFilter(null); setSelectedId(null) }} />
       <div className="workspace">
         <TopNav lastUpdated={lastUpdated} flash={flash} activeTab={activeTab} onTab={(t) => { setActiveTab(t); setFilter(null) }} />
@@ -156,7 +163,7 @@ export default function Dashboard() {
                 <span className="section-title">Upcoming appointments</span>
                 <span className="section-hint">{bookings.length} booked</span>
               </div>
-              <Appointments bookings={bookings} />
+              <Appointments bookings={bookings} firmTz={firmTz} />
             </div>
           )}
           {activeTab === 'appointments' && bookings.length === 0 && (
@@ -172,14 +179,34 @@ export default function Dashboard() {
               <Pipeline leads={leads} loading={loading} selectedId={selectedId} onSelect={setSelectedId} filter={filter} onClearFilter={() => setFilter(null)} onMove={moveLeadToStage} />
             </div>
           )}
+
+          {activeTab === 'archive' && (
+            <div className="section">
+              <div className="section-head">
+                <span className="section-title">Archive</span>
+                <span className="section-hint">no activity in 10+ days · kept for your records</span>
+              </div>
+              {archived.length === 0 ? (
+                <div className="pipeline-empty">
+                  <strong>Archive is empty.</strong> Leads with no activity for 10 days move here automatically. Nothing is deleted.
+                </div>
+              ) : (
+                <div className="filtered-grid">
+                  {archived.map((l) => (
+                    <LeadCard key={l.id} lead={l} selected={l.id === selectedId} onClick={() => setSelectedId(l.id)} />
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </main>
-        {selectedId && <LeadPanel id={selectedId} onClose={() => setSelectedId(null)} onChanged={load} />}
+        {selectedId && <LeadPanel id={selectedId} firmTz={firmTz} onClose={() => setSelectedId(null)} onChanged={load} />}
       </div>
     </div>
   )
 }
 
-function Sidebar({ firm, stageCounts, needsAttention, total, activeFilter, onStage, onHome }) {
+function Sidebar({ firm, stageCounts, needsAttention, total, activeFilter, onStage, onHome, archivedCount, archiveActive, onArchive }) {
   const items = [
     { key: 'new', label: 'New', dot: 'new' },
     { key: 'qualified', label: 'Qualified', dot: 'qualified' },
@@ -223,6 +250,7 @@ function Sidebar({ firm, stageCounts, needsAttention, total, activeFilter, onSta
         {needsAttention > 0 && (
           <button className="side-item side-item-btn attention-item" onClick={() => onStage('handed_off')}><span className="side-item-label">Needs a human</span><span className="side-count urgent">{needsAttention}</span></button>
         )}
+        <button className={'side-item side-item-btn' + (archiveActive ? ' active' : '')} onClick={onArchive}><span className="side-item-label">Archive</span><span className="side-count">{archivedCount || 0}</span></button>
       </div>
 
       <div className="side-foot">Powered by Orca Edge</div>
@@ -237,6 +265,7 @@ function TopNav({ lastUpdated, flash, activeTab, onTab }) {
     { key: 'pipeline', label: 'Pipeline' },
     { key: 'appointments', label: 'Appointments' },
     { key: 'analytics', label: 'Analytics' },
+    { key: 'archive', label: 'Archive' },
   ]
   return (
     <header className="topnav">
@@ -363,7 +392,7 @@ function Trend({ trend }) {
   )
 }
 
-function Appointments({ bookings }) {
+function Appointments({ bookings, firmTz = 'Europe/London' }) {
   return (
     <div className="appts-list">
       {bookings.map((b) => {
@@ -371,8 +400,8 @@ function Appointments({ bookings }) {
         return (
           <div key={b.id} className="appt">
             <div className="appt-when">
-              <div className="appt-day">{d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}</div>
-              <div className="appt-time">{d.toLocaleTimeString('en-GB', { hour: 'numeric', minute: '2-digit' })}</div>
+              <div className="appt-day">{d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: firmTz })}</div>
+              <div className="appt-time">{d.toLocaleTimeString('en-GB', { hour: 'numeric', minute: '2-digit', timeZone: firmTz })}</div>
             </div>
             <div className="appt-who">
               <strong>{b.name || 'Unknown'}</strong>
@@ -492,7 +521,7 @@ function QualBadge({ q }) {
   return <span className={'badge ' + q}>{label}</span>
 }
 
-function LeadPanel({ id, onClose, onChanged }) {
+function LeadPanel({ id, firmTz = 'Europe/London', onClose, onChanged }) {
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [reply, setReply] = useState('')
@@ -625,7 +654,7 @@ function LeadPanel({ id, onClose, onChanged }) {
       {p.booking_at && (
         <div className="panel-section">
           <h3>Booking</h3>
-          <div className="kv"><span>{p.booking_type || 'Meeting'}</span><span>{new Date(p.booking_at).toLocaleString()}</span></div>
+          <div className="kv"><span>{p.booking_type || 'Meeting'}</span><span>{new Date(p.booking_at).toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', timeZone: firmTz })}</span></div>
         </div>
       )}
 

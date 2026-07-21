@@ -79,10 +79,18 @@ export default async function handler(req, res) {
       return res.status(200).json({ person, messages, events, reach: reachOptions(person) });
     }
 
-    // Pipeline list
+    // Pipeline list (default = active board; ?archived=1 = the archive)
     const stage = req.query?.stage || null;
-    const leads = await listLeads(firmId, { stage });
-    res.status(200).json({ firm: { name: CONFIG.firm.name, vertical: CONFIG.firm.vertical }, leads });
+    const archived = req.query?.archived === "1" || req.query?.archived === "true";
+    const leads = await listLeads(firmId, { stage, archived });
+    res.status(200).json({
+      firm: {
+        name: CONFIG.firm.name,
+        vertical: CONFIG.firm.vertical,
+        timezone: (CONFIG.firm.availability && CONFIG.firm.availability.timezone) || "Europe/London",
+      },
+      leads,
+    });
   } catch (err) {
     console.error("Error in /api/leads:", err);
     res.status(500).json({ error: "Something went wrong." });

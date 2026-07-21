@@ -237,10 +237,18 @@ export async function addEvent({ firmId, personId, type, detail, actor }) {
 // ---- Dashboard reads -------------------------------------------------------
 
 // All leads for a firm, newest first, with a couple of derived fields.
-export async function listLeads(firmId, { stage, limit = 200 } = {}) {
+export async function listLeads(firmId, { stage, limit = 200, archived = false, activeDays = 10 } = {}) {
   const params = [firmId];
   let where = `firm_id = $1`;
   if (stage) { params.push(stage); where += ` AND stage = $${params.length}`; }
+  // "Active" (shown on the board) = touched within the last N days OR has an
+  // upcoming booking (so a future appointment is never archived out of view).
+  // "Archived" is simply the complement. Computed live, so no scheduled job is
+  // needed and nothing is ever deleted - archiving only tidies the view.
+  params.push(activeDays);
+  const dIdx = params.length;
+  const activeExpr = `(updated_at >= now() - ($${dIdx}::int * interval '1 day') OR (booking_at IS NOT NULL AND booking_at > now()))`;
+  where += archived ? ` AND NOT ${activeExpr}` : ` AND ${activeExpr}`;
   params.push(limit);
   const { rows } = await pool.query(
     `SELECT * FROM people WHERE ${where} ORDER BY created_at DESC LIMIT $${params.length}`,
