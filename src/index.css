@@ -1,29 +1,32 @@
 /* ============================================================================
-   TOOL 1 - OPERATIONS DASHBOARD - light, premium, on-brand
-   White cards on a soft light-blue canvas, generous whitespace, clearly
-   separated sections, clean even kanban columns. Brand blues only.
+   TOOL 1 - OPERATIONS DASHBOARD - dark, premium, on-brand
+   Raised dark cards on a brand near-black canvas, generous whitespace,
+   clearly separated sections, clean even kanban columns. Brand blues only.
    Palette: #060B14 near-black, #3875AE steel, #4592DC bright, #E9F1F8 light.
    ============================================================================ */
 :root {
-  --nearblack: #060B14;
-  --steel: #3875AE;
-  --bright: #4592DC;
-  --light: #E9F1F8;
-  --canvas: #F5F8FC;      /* page background - soft, calm */
-  --card: #FFFFFF;
-  --ink: #0F1826;         /* primary text */
-  --muted: #667792;       /* secondary text */
-  --faint: #9AA8BE;       /* tertiary */
-  --line: #E4EBF3;        /* hairline borders */
-  --line-soft: #EFF3F8;
-  --green: #2E9E6B;
-  --green-bg: #EAF6F0;
-  --amber: #B27A1B;
-  --amber-bg: #FBF3E4;
-  --red: #C0473F;
-  --red-bg: #FBECEB;
-  --shadow: 0 1px 2px rgba(15,24,38,0.04), 0 4px 16px rgba(15,24,38,0.04);
-  --shadow-lift: 0 2px 6px rgba(15,24,38,0.06), 0 12px 32px rgba(15,24,38,0.08);
+  /* Dark theme, keyed to brand near-black #060B14.
+     Surface + text vars flipped; blue/green/amber/red accents nudged
+     brighter so they read on a dark canvas. Variable names kept stable. */
+  --nearblack: #F3F8FE;   /* heading text (brightest) - was near-black */
+  --steel: #4C86BE;
+  --bright: #57A0E6;
+  --light: #18273D;       /* faint raised surface (pills, hovers, bars, bubbles) */
+  --canvas: #060B14;      /* page background - brand near-black */
+  --card: #0D1727;        /* raised card surface */
+  --ink: #DCE6F3;         /* primary text */
+  --muted: #8595AE;       /* secondary text */
+  --faint: #5C6C86;       /* tertiary */
+  --line: #1C2A40;        /* hairline borders */
+  --line-soft: #14202F;
+  --green: #35B87E;
+  --green-bg: rgba(53,184,126,0.14);
+  --amber: #D0983A;
+  --amber-bg: rgba(208,152,58,0.14);
+  --red: #E06A5E;
+  --red-bg: rgba(224,106,94,0.14);
+  --shadow: 0 1px 2px rgba(0,0,0,0.4), 0 4px 16px rgba(0,0,0,0.4);
+  --shadow-lift: 0 2px 6px rgba(0,0,0,0.5), 0 14px 36px rgba(0,0,0,0.6);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -73,7 +76,7 @@ h1, h2, h3, .brand-name { font-family: 'Quicksand', 'Nunito Sans', sans-serif; }
 .side-item:hover { background: var(--light); }
 .side-item-label { flex: 1; }
 .side-count { font-size: 0.76rem; color: var(--muted); background: var(--light); border-radius: 999px; padding: 2px 10px; min-width: 26px; text-align: center; font-weight: 700; }
-.side-count.urgent { color: var(--steel); background: #DCEAF8; }
+.side-count.urgent { color: var(--bright); background: rgba(76,134,190,0.20); }
 .attention-item .side-item-label { color: var(--steel); font-weight: 700; }
 .side-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
 .side-dot.new { background: #9AA8BE; }
@@ -88,7 +91,7 @@ h1, h2, h3, .brand-name { font-family: 'Quicksand', 'Nunito Sans', sans-serif; }
 .topnav {
   display: flex; align-items: center; justify-content: space-between;
   padding: 18px 34px; border-bottom: 1px solid var(--line);
-  background: rgba(255,255,255,0.85); backdrop-filter: blur(12px);
+  background: rgba(8,14,24,0.72); backdrop-filter: blur(12px);
   position: sticky; top: 0; z-index: 30;
 }
 .topnav-tabs { display: flex; gap: 4px; }
@@ -159,7 +162,7 @@ h1, h2, h3, .brand-name { font-family: 'Quicksand', 'Nunito Sans', sans-serif; }
 .chan-fill.web { background: var(--bright); }
 .chan-fill.whatsapp { background: var(--green); }
 .chan-fill.email { background: var(--steel); }
-.chan-fill.phone { background: var(--nearblack); }
+.chan-fill.phone { background: var(--faint); }
 .chan-n { text-align: right; font-weight: 700; color: var(--ink); }
 .trend { display: flex; align-items: flex-end; gap: 10px; height: 96px; }
 .trend-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px; height: 100%; }
@@ -224,7 +227,7 @@ h1, h2, h3, .brand-name { font-family: 'Quicksand', 'Nunito Sans', sans-serif; }
   padding: 14px; cursor: pointer; color: var(--ink);
   transition: border-color 0.15s, box-shadow 0.15s, transform 0.1s;
 }
-.card:hover { border-color: #C9DBEE; box-shadow: var(--shadow-lift); transform: translateY(-1px); }
+.card:hover { border-color: rgba(87,160,230,0.45); box-shadow: var(--shadow-lift); transform: translateY(-1px); }
 .card.selected { border-color: var(--bright); box-shadow: 0 0 0 2px rgba(69,146,220,0.2); }
 .card-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 8px; }
 .card-top strong { font-size: 0.92rem; color: var(--nearblack); }
@@ -258,8 +261,8 @@ h1, h2, h3, .brand-name { font-family: 'Quicksand', 'Nunito Sans', sans-serif; }
 .panel-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
 .panel-head h2 { font-size: 1.25rem; margin-bottom: 8px; color: var(--nearblack); }
 .close { background: var(--light); border: none; border-radius: 9px; width: 32px; height: 32px; cursor: pointer; color: var(--muted); font-size: 0.9rem; flex-shrink: 0; }
-.close:hover { background: #DCE7F2; color: var(--ink); }
-.panel-handoff { background: var(--amber-bg); color: var(--amber); border: 1px solid #F0DFBB; border-radius: 12px; padding: 14px 16px; font-size: 0.85rem; margin-bottom: 20px; }
+.close:hover { background: #1C2B42; color: var(--ink); }
+.panel-handoff { background: var(--amber-bg); color: var(--amber); border: 1px solid rgba(208,152,58,0.38); border-radius: 12px; padding: 14px 16px; font-size: 0.85rem; margin-bottom: 20px; }
 .panel-handoff div { margin-top: 4px; opacity: 0.9; }
 .panel-section { margin-bottom: 24px; }
 .panel-section h3 { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin-bottom: 12px; font-weight: 800; }
@@ -302,7 +305,7 @@ h1, h2, h3, .brand-name { font-family: 'Quicksand', 'Nunito Sans', sans-serif; }
 .tab { border: none; font-family: inherit; }
 
 .filter-active { cursor: pointer; color: var(--bright); font-weight: 700; background: var(--light); padding: 3px 12px; border-radius: 999px; }
-.filter-active:hover { background: #DCE7F2; }
+.filter-active:hover { background: #1C2B42; }
 
 .pipeline-filtered { }
 .filtered-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
@@ -421,7 +424,7 @@ h1, h2, h3, .brand-name { font-family: 'Quicksand', 'Nunito Sans', sans-serif; }
   padding: 9px 16px; margin-bottom: 18px; cursor: pointer;
   transition: background 0.15s, border-color 0.15s;
 }
-.back-to-pipeline:hover { background: var(--light); border-color: #C9DBEE; }
+.back-to-pipeline:hover { background: var(--light); border-color: rgba(87,160,230,0.45); }
 
 /* ---- Adviser reply composer in the lead panel ---- */
 .takeover-note { background: var(--light); color: var(--steel); border: 1px solid rgba(69,146,220,0.3); border-radius: 10px; padding: 8px 12px; font-size: 0.78rem; font-weight: 600; margin-bottom: 12px; }
@@ -436,7 +439,7 @@ h1, h2, h3, .brand-name { font-family: 'Quicksand', 'Nunito Sans', sans-serif; }
 .reply-send:disabled { opacity: 0.5; cursor: default; }
 .reply-result { font-size: 0.78rem; font-weight: 600; }
 .reply-result.ok { color: var(--green); }
-.reply-result.err { color: #B4523C; }
+.reply-result.err { color: var(--red); }
 .msg.assistant .msg-role { color: var(--steel); }
 
 /* reply method picker */
@@ -444,7 +447,7 @@ h1, h2, h3, .brand-name { font-family: 'Quicksand', 'Nunito Sans', sans-serif; }
 .method-btn { font-size: 0.76rem; font-weight: 700; padding: 5px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--card); color: var(--muted); cursor: pointer; font-family: inherit; }
 .method-btn:hover { border-color: var(--bright); color: var(--steel); }
 .method-btn.active { background: var(--light); border-color: var(--bright); color: var(--bright); }
-.reply-hint.warn { color: #8A6D3B; background: #FBF3E4; border: 1px solid #F0DFBB; border-radius: 8px; padding: 8px 12px; }
+.reply-hint.warn { color: var(--amber); background: var(--amber-bg); border: 1px solid rgba(208,152,58,0.38); border-radius: 8px; padding: 8px 12px; }
 
 /* ---- Lead panel actions (stage move, delete, notes) ---- */
 .panel-actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0 16px; border-bottom: 1px solid var(--line); margin-bottom: 4px; flex-wrap: wrap; }
@@ -453,10 +456,10 @@ h1, h2, h3, .brand-name { font-family: 'Quicksand', 'Nunito Sans', sans-serif; }
 .stage-btn { font-size: 0.76rem; font-weight: 700; padding: 6px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--card); color: var(--steel); cursor: pointer; font-family: inherit; transition: all 0.12s; }
 .stage-btn:hover:not(:disabled) { border-color: var(--bright); background: var(--light); }
 .stage-btn.current { opacity: 0.5; cursor: default; }
-.stage-btn-won:hover:not(:disabled) { border-color: var(--green); color: var(--green); background: #EAF6EF; }
-.stage-btn-lost:hover:not(:disabled) { border-color: #C2705C; color: #B4523C; background: #FBEEEA; }
+.stage-btn-won:hover:not(:disabled) { border-color: var(--green); color: var(--green); background: var(--green-bg); }
+.stage-btn-lost:hover:not(:disabled) { border-color: rgba(224,106,94,0.55); color: var(--red); background: var(--red-bg); }
 .delete-btn { font-size: 0.76rem; font-weight: 700; padding: 6px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--card); color: var(--muted); cursor: pointer; font-family: inherit; }
-.delete-btn:hover { border-color: #C2705C; color: #B4523C; background: #FBEEEA; }
+.delete-btn:hover { border-color: rgba(224,106,94,0.55); color: var(--red); background: var(--red-bg); }
 /* notes */
 .notes-box .note-sub { font-size: 0.72rem; font-weight: 500; color: var(--muted); margin-left: 6px; }
 .note-input { width: 100%; border: 1px solid var(--line); border-radius: 12px; padding: 11px 14px; font-family: inherit; font-size: 0.88rem; resize: vertical; color: var(--ink); background: var(--card); }
