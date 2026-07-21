@@ -78,6 +78,40 @@ export async function createPerson({ id, firmId, channel, source }) {
   return rows[0] ?? (await getPerson(id));
 }
 
+function digits(s) { return String(s || "").replace(/\D/g, ""); }
+
+// Dedup: find an EARLIER person (different session) in the same firm who shares
+// this email or phone, so we recognise a returning enquirer instead of
+// double-counting them. Matches normalised email or last-9-digits of phone.
+export async function findDuplicate(firmId, currentId, { email, phone, contact }) {
+  const em = (email || (contact && /@/.test(contact) ? contact : "") || "").trim().toLowerCase();
+  const phRaw = digits(phone || (contact && !/@/.test(contact) ? contact : "") || "");
+  const ph = phRaw.length >= 7 ? phRaw.slice(-9) : "";
+  if (!em && !ph) return null; // nothing reliable to match on
+
+  const { rows } = await pool.query(
+    `SELECT id, name, contact, email, phone, created_at, stage
+     FROM people
+     WHERE firm_id = $1 AND id <> $2
+       AND ( ($3 <> '' AND lower(email) = $3)
+          OR ($3 <> '' AND lower(contact) = $3)
+          OR ($4 <> '' AND right(regexp_replace(phone, '\D', '', 'g'), 9) = $4)
+          OR ($4 <> '' AND right(regexp_replace(contact, '\D', '', 'g'), 9) = $4) )
+     ORDER BY created_at ASC
+     LIMIT 1`,
+    [firmId, currentId, em, ph]
+  );
+  return rows[0] || null;
+}
+
+// Mark the current person as a duplicate of an earlier one (stored in fields).
+export async function markDuplicate(currentId, originalId) {
+  await pool.query(
+    `UPDATE people SET fields = jsonb_set(COALESCE(fields,'{}'::jsonb), '{duplicate_of}', to_jsonb($2::text)), updated_at = now() WHERE id = $1`,
+    [currentId, originalId]
+  );
+}
+
 // Update a person's captured lead fields after an AI turn. Only overwrites a
 // field when the new value is non-empty, so later turns never blank out data
 // an earlier turn captured (this is the "record fills up over the conversation"

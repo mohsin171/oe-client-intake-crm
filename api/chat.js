@@ -17,6 +17,7 @@ import { checkLimits, clientIp, looksLikeSpam } from "../lib/safety.js";
 import {
   ensureSchema, ensureFirm, createPerson, getPerson, updateLead,
   setHandoff, setBooking, addMessage, getHistoryForAI, addEvent, getAvailableSlots,
+  findDuplicate, markDuplicate,
 } from "../db/index.js";
 
 let ready = false;
@@ -93,6 +94,16 @@ export default async function handler(req, res) {
     if (handoff?.needed) {
       await setHandoff(sessionId, handoff);
       await addEvent({ firmId, personId: sessionId, type: "handoff", detail: `${handoff.trigger}: ${handoff.summary}`, actor: "ai" });
+    }
+
+    // Dedup: if this person gave a contact that matches an earlier enquirer,
+    // flag them as a returning contact rather than a brand-new lead.
+    if ((person?.contact || person?.email || person?.phone) && !(person?.fields?.duplicate_of)) {
+      const dup = await findDuplicate(firmId, sessionId, { email: person.email, phone: person.phone, contact: person.contact });
+      if (dup) {
+        await markDuplicate(sessionId, dup.id);
+        await addEvent({ firmId, personId: sessionId, type: "duplicate_detected", detail: `Returning enquirer; first seen as ${dup.id}`, actor: "system" });
+      }
     }
 
     // 5. perform actions; ensure notify fires on handoff even if AI forgot
