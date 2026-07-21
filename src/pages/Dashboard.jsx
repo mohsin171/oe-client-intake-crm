@@ -151,9 +151,7 @@ export default function Dashboard() {
             <div className="section">
               <div className="section-head">
                 <span className="section-title">Pipeline</span>
-                {filter
-                  ? <span className="section-hint filter-active" onClick={() => setFilter(null)}>Filtered: {filterLabel(filter)} · clear ✕</span>
-                  : <span className="section-hint">every lead, by stage</span>}
+                <span className="section-hint">{filter ? filterLabel(filter) : 'every lead, by stage'}</span>
               </div>
               <Pipeline leads={leads} loading={loading} selectedId={selectedId} onSelect={setSelectedId} filter={filter} onClearFilter={() => setFilter(null)} />
             </div>
