@@ -182,7 +182,6 @@
         hideTyping();
         if (data.sessionId) sessionId = data.sessionId;
         addMsg(data.reply || "Sorry, something went wrong. Please try again.", "bot");
-        if (data.slots && data.slots.length) renderSlots(data.slots);
       })
       .catch(function () {
         hideTyping();
@@ -192,52 +191,6 @@
   }
 
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
-
-  // Render available appointment slots as tappable buttons.
-  function renderSlots(slots) {
-    var wrap = el("div", "oe-w-slots");
-    slots.forEach(function (iso) {
-      var d = new Date(iso);
-      var label = d.toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short", timeZone: tz }) +
-        ", " + d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit", timeZone: tz });
-      var b = el("button", "oe-w-slot", esc(label));
-      b.onclick = function () { chooseSlot(iso, wrap, b); };
-      wrap.appendChild(b);
-    });
-    body.appendChild(wrap);
-    body.scrollTop = body.scrollHeight;
-  }
-
-  function chooseSlot(iso, wrap, btn) {
-    // disable all slot buttons while booking
-    Array.prototype.forEach.call(wrap.querySelectorAll(".oe-w-slot"), function (b) { b.disabled = true; });
-    btn.classList.add("oe-w-slot-chosen");
-    showTyping();
-    fetch(API + "/api/book", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ sessionId: sessionId, slotAt: iso }),
-    })
-      .then(function (r) { return r.json().then(function (j) { return { status: r.status, j: j }; }); })
-      .then(function (res) {
-        hideTyping();
-        if (res.status === 200 && res.j.ok) {
-          wrap.remove();
-          addMsg(res.j.confirm, "bot");
-        } else if (res.status === 409) {
-          addMsg("Sorry, that time was just taken. Please choose another.", "bot");
-          Array.prototype.forEach.call(wrap.querySelectorAll(".oe-w-slot"), function (b) { b.disabled = false; });
-          btn.classList.remove("oe-w-slot-chosen");
-          btn.disabled = true; // the taken one stays disabled
-        } else {
-          addMsg("Sorry, I couldn't book that just now. An adviser will follow up to arrange a time.", "bot");
-        }
-      })
-      .catch(function () {
-        hideTyping();
-        addMsg("Sorry, I couldn't book that just now. An adviser will follow up to arrange a time.", "bot");
-      });
-  }
 
   // Fetch branding, then build.
   fetch(API + "/api/widget-config")
