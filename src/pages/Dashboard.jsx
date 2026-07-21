@@ -463,14 +463,45 @@ function QualBadge({ q }) {
 function LeadPanel({ id, onClose }) {
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [reply, setReply] = useState('')
+  const [sending, setSending] = useState(false)
+  const [sendResult, setSendResult] = useState(null)
 
-  useEffect(() => {
-    setLoading(true)
+  function load() {
     fetch(`/api/leads?id=${encodeURIComponent(id)}`)
       .then((r) => r.json())
       .then(setData)
       .finally(() => setLoading(false))
+  }
+
+  useEffect(() => {
+    setLoading(true); setReply(''); setSendResult(null)
+    load()
   }, [id])
+
+  async function sendReply() {
+    if (!reply.trim() || sending) return
+    setSending(true); setSendResult(null)
+    try {
+      const r = await fetch('/api/leads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, reply: reply.trim() }),
+      })
+      const j = await r.json()
+      if (j.ok) {
+        setSendResult({ ok: true, text: `Sent via ${j.channel}` })
+        setReply('')
+        load()
+      } else {
+        setSendResult({ ok: false, text: j.detail || j.error || 'Could not send.' })
+      }
+    } catch {
+      setSendResult({ ok: false, text: 'Could not send. Please try again.' })
+    } finally {
+      setSending(false)
+    }
+  }
 
   if (loading) return <aside className="panel"><div className="panel-loading">Loading…</div></aside>
   if (!data || data.error) return <aside className="panel"><div className="panel-loading">Not found.</div></aside>
@@ -528,14 +559,33 @@ function LeadPanel({ id, onClose }) {
 
       <div className="panel-section">
         <h3>Conversation</h3>
+        {p.agent_takeover && <div className="takeover-note">You're handling this lead. The AI has stepped back.</div>}
         <div className="convo">
           {data.messages.length === 0 && <p className="muted">No messages recorded.</p>}
           {data.messages.map((m, i) => (
             <div key={i} className={'msg ' + m.role}>
-              <div className="msg-role">{m.role === 'user' ? 'Visitor' : 'AI receptionist'}</div>
+              <div className="msg-role">{m.role === 'user' ? 'Visitor' : (p.agent_takeover || m.channel === 'email' ? 'Reply' : 'AI intake')}</div>
               <div className="msg-content">{m.content}</div>
             </div>
           ))}
+        </div>
+      </div>
+
+      <div className="panel-section reply-box">
+        <h3>Reply to {p.name || 'this lead'}</h3>
+        <p className="reply-hint">Sends on their channel: <strong>{p.channel}</strong>{p.contact ? ` · ${p.contact}` : ''}</p>
+        <textarea
+          className="reply-input"
+          placeholder={`Type your reply…`}
+          value={reply}
+          onChange={(e) => setReply(e.target.value)}
+          rows={3}
+        />
+        <div className="reply-actions">
+          <button className="reply-send" onClick={sendReply} disabled={sending || !reply.trim()}>
+            {sending ? 'Sending…' : 'Send reply'}
+          </button>
+          {sendResult && <span className={'reply-result ' + (sendResult.ok ? 'ok' : 'err')}>{sendResult.text}</span>}
         </div>
       </div>
     </aside>

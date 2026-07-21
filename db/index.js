@@ -47,6 +47,8 @@ export async function query(text, params) {
 export async function ensureSchema() {
   const sql = readFileSync(join(__dirname, "schema.sql"), "utf8");
   await pool.query(sql);
+  // idempotent migrations for columns added after first deploy
+  await pool.query(`ALTER TABLE people ADD COLUMN IF NOT EXISTS agent_takeover BOOLEAN NOT NULL DEFAULT false`);
 }
 
 // Make sure a firm row exists (called once at startup for the configured firm).
@@ -195,6 +197,11 @@ export async function getMessages(personId) {
 export async function getHistoryForAI(personId) {
   const rows = await getMessages(personId);
   return rows.map((m) => ({ role: m.role, content: m.content }));
+}
+
+// Mark that a human adviser has taken over this lead (AI stands down), or clear it.
+export async function setAgentTakeover(personId, on = true) {
+  await pool.query(`UPDATE people SET agent_takeover = $2 WHERE id = $1`, [personId, on]);
 }
 
 // ---- Events (audit trail) --------------------------------------------------

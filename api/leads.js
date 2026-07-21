@@ -1,7 +1,11 @@
 // GET /api/leads?stage=...   -> the pipeline list for the dashboard
 // GET /api/leads?id=...       -> one lead with its full conversation + events
-import { ensureSchema, ensureFirm, listLeads, getPerson, getMessages, query } from "../db/index.js";
+// POST /api/leads  { id, reply } -> adviser sends a reply on the lead's channel
+//                                   (also flags the lead as human-handled so the
+//                                   AI stands down)
+import { ensureSchema, ensureFirm, listLeads, getPerson, getMessages, addMessage, addEvent, setAgentTakeover, query } from "../db/index.js";
 import { CONFIG } from "../lib/config.js";
+import { sendToLead } from "../lib/outbound.js";
 
 let ready = false;
 async function boot() {
@@ -12,10 +16,37 @@ async function boot() {
 }
 
 export default async function handler(req, res) {
-  if (req.method !== "GET") return res.status(405).json({ error: "Method not allowed" });
   try {
     await boot();
     const firmId = CONFIG.firm.id;
+
+    // ---- Adviser reply from the dashboard ----
+    if (req.method === "POST") {
+      const body = typeof req.body === "string" ? JSON.parse(req.body || "{}") : (req.body || {});
+      const { id, reply } = body;
+      if (!id || !reply || !String(reply).trim()) {
+        return res.status(400).json({ error: "Missing lead id or reply text." });
+      }
+      const person = await getPerson(id);
+      if (!person) return res.status(404).json({ error: "Lead not found" });
+
+      // send it out on the lead's own channel
+      const sent = await sendToLead(person, String(reply).trim());
+
+      // record the adviser message in the thread + audit, and take over so the
+      // AI won't also auto-reply on this lead
+      await addMessage({ personId: id, firmId, role: "assistant", channel: person.channel, content: String(reply).trim() });
+      await setAgentTakeover(id, true);
+      await addEvent({
+        firmId, personId: id, type: "agent_reply",
+        detail: sent.ok ? `Adviser replied via ${sent.channel} (${sent.detail})` : `Adviser reply not delivered: ${sent.detail}`,
+        actor: "agent",
+      });
+
+      return res.status(200).json({ ok: sent.ok, channel: sent.channel, detail: sent.detail });
+    }
+
+    if (req.method !== "GET") return res.status(405).json({ error: "Method not allowed" });
 
     // Single lead detail (conversation + events)
     if (req.query?.id) {

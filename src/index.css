@@ -422,3 +422,19 @@ h1, h2, h3, .brand-name { font-family: 'Quicksand', 'Nunito Sans', sans-serif; }
   transition: background 0.15s, border-color 0.15s;
 }
 .back-to-pipeline:hover { background: var(--light); border-color: #C9DBEE; }
+
+/* ---- Adviser reply composer in the lead panel ---- */
+.takeover-note { background: var(--light); color: var(--steel); border: 1px solid rgba(69,146,220,0.3); border-radius: 10px; padding: 8px 12px; font-size: 0.78rem; font-weight: 600; margin-bottom: 12px; }
+.reply-box { border-top: 1px solid var(--line); padding-top: 18px; }
+.reply-hint { font-size: 0.76rem; color: var(--muted); margin-bottom: 10px; }
+.reply-hint strong { color: var(--steel); text-transform: capitalize; }
+.reply-input { width: 100%; border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; font-family: inherit; font-size: 0.9rem; resize: vertical; color: var(--ink); background: var(--card); }
+.reply-input:focus { outline: none; border-color: var(--bright); box-shadow: 0 0 0 3px rgba(69,146,220,0.12); }
+.reply-actions { display: flex; align-items: center; gap: 12px; margin-top: 10px; }
+.reply-send { background: linear-gradient(140deg, var(--bright), var(--steel)); color: #fff; border: none; border-radius: 10px; padding: 10px 20px; font-weight: 700; font-size: 0.85rem; cursor: pointer; font-family: inherit; transition: box-shadow 0.15s, transform 0.1s; }
+.reply-send:hover:not(:disabled) { box-shadow: 0 6px 18px rgba(69,146,220,0.35); }
+.reply-send:disabled { opacity: 0.5; cursor: default; }
+.reply-result { font-size: 0.78rem; font-weight: 600; }
+.reply-result.ok { color: var(--green); }
+.reply-result.err { color: #B4523C; }
+.msg.assistant .msg-role { color: var(--steel); }
