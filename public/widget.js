@@ -29,9 +29,16 @@
   .oe-w-bubble svg { width: 28px; height: 28px; fill: #fff; }
   .oe-w-panel { position: fixed; bottom: 94px; right: 22px; width: 370px; max-width: calc(100vw - 32px); height: 560px; max-height: calc(100vh - 130px); background: #fff; border-radius: 16px; box-shadow: 0 12px 44px rgba(0,0,0,0.25); z-index: 2147483000; display: flex; flex-direction: column; overflow: hidden; opacity: 0; transform: translateY(12px); pointer-events: none; transition: opacity 0.2s, transform 0.2s; }
   .oe-w-panel.oe-open { opacity: 1; transform: translateY(0); pointer-events: auto; }
-  .oe-w-head { background: var(--oe-accent); color: #fff; padding: 16px 18px; }
+  .oe-w-head { background: linear-gradient(135deg, var(--oe-accent), #2E5F8C); color: #fff; padding: 16px 16px; }
+  .oe-w-head-row { display: flex; align-items: center; gap: 12px; }
+  .oe-w-avatar { width: 40px; height: 40px; border-radius: 11px; background: rgba(255,255,255,0.16); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .oe-w-avatar svg { width: 24px; height: 24px; }
+  .oe-w-head-txt { flex: 1; min-width: 0; }
   .oe-w-head h4 { font-size: 1rem; font-weight: 700; }
-  .oe-w-head p { font-size: 0.78rem; opacity: 0.9; margin-top: 2px; display: flex; align-items: center; gap: 6px; }
+  .oe-w-head p { font-size: 0.75rem; opacity: 0.92; margin-top: 2px; display: flex; align-items: center; gap: 6px; }
+  .oe-w-close { background: rgba(255,255,255,0.14); border: none; color: #fff; width: 30px; height: 30px; border-radius: 9px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: background 0.15s; }
+  .oe-w-close:hover { background: rgba(255,255,255,0.26); }
+  .oe-w-close svg { width: 18px; height: 18px; }
   .oe-w-live { width: 7px; height: 7px; border-radius: 50%; background: #35F0A0; display: inline-block; box-shadow: 0 0 0 0 rgba(53,240,160,0.6); animation: oe-livepulse 2s infinite; }
   @keyframes oe-livepulse { 0% { box-shadow: 0 0 0 0 rgba(53,240,160,0.55); } 70% { box-shadow: 0 0 0 6px rgba(53,240,160,0); } 100% { box-shadow: 0 0 0 0 rgba(53,240,160,0); } }
   .oe-w-body { flex: 1; overflow-y: auto; padding: 16px; background: #F4F7FB; display: flex; flex-direction: column; gap: 10px; }
@@ -83,7 +90,21 @@
     bubble.onclick = toggle;
 
     panel = el("div", "oe-w-panel");
-    var head = el("div", "oe-w-head", "<h4>" + esc(firmName) + "</h4><p><span class='oe-w-live'></span>Adviser desk online &middot; replies in seconds, 24/7</p>");
+    var head = el("div", "oe-w-head");
+    head.innerHTML =
+      '<div class="oe-w-head-row">' +
+        '<div class="oe-w-avatar">' +
+          '<svg viewBox="0 0 32 32" fill="none"><path d="M16 4.5 L27 13 V27 H20 V19.5 H12 V27 H5 V13 Z" fill="#fff" fill-opacity="0.95"/><path d="M16 4.5 L27 13" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M16 4.5 L5 13" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
+        '</div>' +
+        '<div class="oe-w-head-txt">' +
+          '<h4>' + esc(firmName) + '</h4>' +
+          '<p><span class="oe-w-live"></span>Adviser desk online &middot; 24/7</p>' +
+        '</div>' +
+        '<button class="oe-w-close" aria-label="Minimise chat">' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>' +
+        '</button>' +
+      '</div>';
+    head.querySelector(".oe-w-close").onclick = toggle;
     body = el("div", "oe-w-body");
     promptsRow = el("div", "oe-w-prompts");
     ["Can you help me remortgage?", "I'm a first-time buyer", "I'm self-employed"].forEach(function (p) {
@@ -111,6 +132,14 @@
   function toggle() {
     open = !open;
     panel.classList.toggle("oe-open", open);
+    // bubble becomes a close (X) while open
+    if (open) {
+      bubble.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+      bubble.setAttribute("aria-label", "Close chat");
+    } else {
+      bubble.innerHTML = '<svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>';
+      bubble.setAttribute("aria-label", "Open chat");
+    }
     if (open && !greeted) {
       greeted = true;
       addMsg(greeting, "bot");
