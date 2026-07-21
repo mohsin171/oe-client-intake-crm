@@ -18,14 +18,24 @@ import { dirname, join } from "node:path";
 const { Pool } = pg;
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
+// The connection string. Different hosts name this variable differently, so
+// accept any of the common ones. Vercel + Neon inject POSTGRES_URL (and
+// friends); local dev uses DATABASE_URL. First non-empty wins.
+const CONNECTION_STRING =
+  process.env.DATABASE_URL ||
+  process.env.POSTGRES_URL ||
+  process.env.POSTGRES_PRISMA_URL ||
+  process.env.POSTGRES_URL_NON_POOLING ||
+  process.env.DATABASE_URL_UNPOOLED;
+
+const isLocal = CONNECTION_STRING?.includes("localhost") || CONNECTION_STRING?.includes("/tmp");
+
 // A single shared connection pool. On serverless this is created per cold
 // start and reused across warm invocations.
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  // Vercel/Neon require SSL; local dev does not. Enable it unless we're local.
-  ssl: process.env.DATABASE_URL?.includes("localhost") || process.env.DATABASE_URL?.includes("/tmp")
-    ? false
-    : { rejectUnauthorized: false },
+  connectionString: CONNECTION_STRING,
+  // Vercel/Neon require SSL; local dev does not.
+  ssl: isLocal ? false : { rejectUnauthorized: false },
   max: 5,
 });
 
