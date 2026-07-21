@@ -105,6 +105,15 @@ export default function Dashboard() {
         <TopNav lastUpdated={lastUpdated} flash={flash} activeTab={activeTab} onTab={(t) => { setActiveTab(t); setFilter(null) }} />
         <main className="main" key={activeTab}>
 
+          {(activeTab === 'overview' || activeTab === 'pipeline') && needsAttention.length > 0 && (
+            <div className="section attention-top">
+              <div className="attention" onClick={() => applyFilter({ type: 'stage', value: 'handed_off' })} style={{ cursor: 'pointer' }}>
+                <span className="attention-dot" />
+                {needsAttention.length} lead{needsAttention.length > 1 ? 's' : ''} need{needsAttention.length > 1 ? '' : 's'} a human. Tap to view.
+              </div>
+            </div>
+          )}
+
           {(activeTab === 'overview') && stats && (
             <div className="section">
               <div className="section-head">
@@ -122,15 +131,6 @@ export default function Dashboard() {
                 <span className="section-hint">conversion, channels, trend</span>
               </div>
               <Analytics stats={stats} />
-            </div>
-          )}
-
-          {(activeTab === 'overview' || activeTab === 'pipeline') && needsAttention.length > 0 && (
-            <div className="section">
-              <div className="attention" onClick={() => applyFilter({ type: 'stage', value: 'handed_off' })} style={{ cursor: 'pointer' }}>
-                <span className="attention-dot" />
-                {needsAttention.length} lead{needsAttention.length > 1 ? 's' : ''} need{needsAttention.length > 1 ? '' : 's'} a human. Tap to view.
-              </div>
             </div>
           )}
 
