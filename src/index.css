@@ -82,6 +82,19 @@ body {
 .stat-label { font-size: 0.82rem; margin-top: 6px; font-weight: 600; }
 .stat-note { font-size: 0.68rem; opacity: 0.6; margin-top: 2px; }
 
+/* ---- Appointments ---- */
+.appts { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; margin-bottom: 22px; }
+.appts-head { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.03em; color: var(--muted); margin-bottom: 14px; }
+.appts-icon { font-size: 1rem; }
+.appts-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
+.appt { display: flex; gap: 14px; align-items: center; background: var(--green-bg); border-radius: 11px; padding: 12px 14px; }
+.appt-when { text-align: center; flex-shrink: 0; }
+.appt-day { font-size: 0.72rem; font-weight: 700; color: var(--green); text-transform: uppercase; }
+.appt-time { font-size: 1.15rem; font-weight: 800; color: var(--green); }
+.appt-who { display: flex; flex-direction: column; min-width: 0; }
+.appt-who strong { font-size: 0.92rem; }
+.appt-who span { font-size: 0.78rem; color: var(--muted); text-transform: capitalize; }
+
 /* ---- Attention banner ---- */
 .attention {
   display: flex; align-items: center; gap: 9px;

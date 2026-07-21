@@ -21,6 +21,7 @@ export default function Dashboard() {
   const [firm, setFirm] = useState('')
   const [leads, setLeads] = useState([])
   const [stats, setStats] = useState(null)
+  const [bookings, setBookings] = useState([])
   const [selectedId, setSelectedId] = useState(null)
   const [loading, setLoading] = useState(true)
   const [lastUpdated, setLastUpdated] = useState(null)
@@ -29,9 +30,10 @@ export default function Dashboard() {
 
   const load = useCallback(async () => {
     try {
-      const [l, a] = await Promise.all([
+      const [l, a, bk] = await Promise.all([
         fetch('/api/leads').then((r) => r.json()),
         fetch('/api/analytics').then((r) => r.json()),
+        fetch('/api/bookings').then((r) => r.json()),
       ])
       const newLeads = l.leads || []
       if (prevCount.current && newLeads.length > prevCount.current) {
@@ -42,6 +44,7 @@ export default function Dashboard() {
       setLeads(newLeads)
       setFirm(l.firm?.name || '')
       setStats(a)
+      setBookings(bk.bookings || [])
       setLastUpdated(new Date())
     } catch (e) {
       /* keep last good data on transient error */
@@ -70,6 +73,7 @@ export default function Dashboard() {
               {needsAttention.length} lead{needsAttention.length > 1 ? 's' : ''} need{needsAttention.length > 1 ? '' : 's'} a human. See "Needs a human" below.
             </div>
           )}
+          {bookings.length > 0 && <Appointments bookings={bookings} />}
           <Pipeline leads={leads} loading={loading} selectedId={selectedId} onSelect={setSelectedId} />
         </main>
         {selectedId && <LeadPanel id={selectedId} onClose={() => setSelectedId(null)} />}
@@ -119,6 +123,35 @@ function Stats({ stats }) {
       <div className="stat">
         <div className="stat-value">{stats.meetings_booked}</div>
         <div className="stat-label">Meetings booked</div>
+      </div>
+    </section>
+  )
+}
+
+function Appointments({ bookings }) {
+  return (
+    <section className="appts">
+      <div className="appts-head">
+        <span className="appts-icon">📅</span>
+        Upcoming appointments
+        <span className="count">{bookings.length}</span>
+      </div>
+      <div className="appts-list">
+        {bookings.map((b) => {
+          const d = new Date(b.slot_at)
+          return (
+            <div key={b.id} className="appt">
+              <div className="appt-when">
+                <div className="appt-day">{d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}</div>
+                <div className="appt-time">{d.toLocaleTimeString('en-GB', { hour: 'numeric', minute: '2-digit' })}</div>
+              </div>
+              <div className="appt-who">
+                <strong>{b.name || 'Unknown'}</strong>
+                <span>{b.slot_type}{b.contact ? ' · ' + b.contact : ''}</span>
+              </div>
+            </div>
+          )
+        })}
       </div>
     </section>
   )
