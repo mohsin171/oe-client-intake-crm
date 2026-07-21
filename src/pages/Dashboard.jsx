@@ -155,7 +155,7 @@ export default function Dashboard() {
                   ? <span className="section-hint filter-active" onClick={() => setFilter(null)}>Filtered: {filterLabel(filter)} · clear ✕</span>
                   : <span className="section-hint">every lead, by stage</span>}
               </div>
-              <Pipeline leads={leads} loading={loading} selectedId={selectedId} onSelect={setSelectedId} filter={filter} />
+              <Pipeline leads={leads} loading={loading} selectedId={selectedId} onSelect={setSelectedId} filter={filter} onClearFilter={() => setFilter(null)} />
             </div>
           )}
         </main>
@@ -369,7 +369,7 @@ function Appointments({ bookings }) {
   )
 }
 
-function Pipeline({ leads, loading, selectedId, onSelect, filter }) {
+function Pipeline({ leads, loading, selectedId, onSelect, filter, onClearFilter }) {
   if (loading && leads.length === 0) return <div className="pipeline"><div className="pipeline-empty">Loading your pipeline…</div></div>
   if (leads.length === 0) {
     return (
@@ -381,7 +381,8 @@ function Pipeline({ leads, loading, selectedId, onSelect, filter }) {
     )
   }
 
-  // Filtered view: a focused single column of matching leads.
+  // Filtered view: a focused single column of matching leads, with a clear
+  // "back to full pipeline" control.
   if (filter && filter.type !== 'all') {
     const match = (l) =>
       (filter.type === 'stage' && l.stage === filter.value) ||
@@ -389,6 +390,9 @@ function Pipeline({ leads, loading, selectedId, onSelect, filter }) {
     const shown = leads.filter(match)
     return (
       <div className="pipeline-filtered">
+        <button className="back-to-pipeline" onClick={onClearFilter}>
+          ← Back to full pipeline
+        </button>
         {shown.length === 0 && <div className="pipeline-empty">No leads match this filter right now.</div>}
         <div className="filtered-grid">
           {shown.map((l) => (
