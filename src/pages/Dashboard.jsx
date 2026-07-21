@@ -98,6 +98,9 @@ export default function Dashboard() {
     <div className="shell">
       <div className="bg-glow bg-glow-1" />
       <div className="bg-glow bg-glow-2" />
+      <span className="bg-ring bg-ring-1" />
+      <span className="bg-ring bg-ring-2" />
+      <span className="bg-ring bg-ring-3" />
       <Sidebar firm={firm} stageCounts={stageCounts} needsAttention={needsAttention.length} total={leads.length}
         activeFilter={filter} onStage={(k) => applyFilter({ type: 'stage', value: k })}
         onHome={() => { setActiveTab('overview'); setFilter(null); setSelectedId(null) }} />
