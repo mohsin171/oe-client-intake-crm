@@ -5,7 +5,7 @@
 //                                   AI stands down)
 import { ensureSchema, ensureFirm, listLeads, getPerson, getMessages, addMessage, addEvent, setAgentTakeover, query } from "../db/index.js";
 import { CONFIG } from "../lib/config.js";
-import { sendToLead } from "../lib/outbound.js";
+import { sendToLead, reachOptions } from "../lib/outbound.js";
 
 let ready = false;
 async function boot() {
@@ -23,15 +23,15 @@ export default async function handler(req, res) {
     // ---- Adviser reply from the dashboard ----
     if (req.method === "POST") {
       const body = typeof req.body === "string" ? JSON.parse(req.body || "{}") : (req.body || {});
-      const { id, reply } = body;
+      const { id, reply, method } = body;
       if (!id || !reply || !String(reply).trim()) {
         return res.status(400).json({ error: "Missing lead id or reply text." });
       }
       const person = await getPerson(id);
       if (!person) return res.status(404).json({ error: "Lead not found" });
 
-      // send it out on the lead's own channel
-      const sent = await sendToLead(person, String(reply).trim());
+      // send it out on the lead's channel (or the method the adviser chose)
+      const sent = await sendToLead(person, String(reply).trim(), method || null);
 
       // record the adviser message in the thread + audit, and take over so the
       // AI won't also auto-reply on this lead
@@ -57,7 +57,7 @@ export default async function handler(req, res) {
         `SELECT type, detail, actor, created_at FROM events WHERE person_id=$1 ORDER BY created_at ASC`,
         [req.query.id]
       );
-      return res.status(200).json({ person, messages, events });
+      return res.status(200).json({ person, messages, events, reach: reachOptions(person) });
     }
 
     // Pipeline list

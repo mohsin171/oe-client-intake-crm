@@ -466,6 +466,7 @@ function LeadPanel({ id, onClose }) {
   const [reply, setReply] = useState('')
   const [sending, setSending] = useState(false)
   const [sendResult, setSendResult] = useState(null)
+  const [method, setMethod] = useState(null)
 
   function load() {
     fetch(`/api/leads?id=${encodeURIComponent(id)}`)
@@ -475,7 +476,7 @@ function LeadPanel({ id, onClose }) {
   }
 
   useEffect(() => {
-    setLoading(true); setReply(''); setSendResult(null)
+    setLoading(true); setReply(''); setSendResult(null); setMethod(null)
     load()
   }, [id])
 
@@ -486,7 +487,7 @@ function LeadPanel({ id, onClose }) {
       const r = await fetch('/api/leads', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, reply: reply.trim() }),
+        body: JSON.stringify({ id, reply: reply.trim(), method: method || undefined }),
       })
       const j = await r.json()
       if (j.ok) {
@@ -573,16 +574,38 @@ function LeadPanel({ id, onClose }) {
 
       <div className="panel-section reply-box">
         <h3>Reply to {p.name || 'this lead'}</h3>
-        <p className="reply-hint">Sends on their channel: <strong>{p.channel}</strong>{p.contact ? ` · ${p.contact}` : ''}</p>
+        {(() => {
+          const reach = data.reach || []
+          if (reach.length === 0) {
+            return <p className="reply-hint warn">This lead left no contact, so a reply can't be delivered. It will be saved to the conversation in case they return.</p>
+          }
+          const nice = { email: 'Email', whatsapp: 'WhatsApp', sms: 'SMS', instagram: 'Instagram', messenger: 'Messenger', facebook: 'Facebook' }
+          const active = method || reach[0]
+          return (
+            <>
+              <p className="reply-hint">Reply goes to <strong>{p.contact || p.channel}</strong></p>
+              {reach.length > 1 && (
+                <div className="method-pick">
+                  {reach.map((m) => (
+                    <button key={m} className={'method-btn' + (active === m ? ' active' : '')} onClick={() => setMethod(m)}>
+                      {nice[m] || m}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </>
+          )
+        })()}
         <textarea
           className="reply-input"
           placeholder={`Type your reply…`}
           value={reply}
           onChange={(e) => setReply(e.target.value)}
           rows={3}
+          disabled={(data.reach || []).length === 0}
         />
         <div className="reply-actions">
-          <button className="reply-send" onClick={sendReply} disabled={sending || !reply.trim()}>
+          <button className="reply-send" onClick={sendReply} disabled={sending || !reply.trim() || (data.reach || []).length === 0}>
             {sending ? 'Sending…' : 'Send reply'}
           </button>
           {sendResult && <span className={'reply-result ' + (sendResult.ok ? 'ok' : 'err')}>{sendResult.text}</span>}

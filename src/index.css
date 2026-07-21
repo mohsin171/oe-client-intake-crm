@@ -438,3 +438,10 @@ h1, h2, h3, .brand-name { font-family: 'Quicksand', 'Nunito Sans', sans-serif; }
 .reply-result.ok { color: var(--green); }
 .reply-result.err { color: #B4523C; }
 .msg.assistant .msg-role { color: var(--steel); }
+
+/* reply method picker */
+.method-pick { display: flex; gap: 6px; margin-bottom: 10px; }
+.method-btn { font-size: 0.76rem; font-weight: 700; padding: 5px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--card); color: var(--muted); cursor: pointer; font-family: inherit; }
+.method-btn:hover { border-color: var(--bright); color: var(--steel); }
+.method-btn.active { background: var(--light); border-color: var(--bright); color: var(--bright); }
+.reply-hint.warn { color: #8A6D3B; background: #FBF3E4; border: 1px solid #F0DFBB; border-radius: 8px; padding: 8px 12px; }
