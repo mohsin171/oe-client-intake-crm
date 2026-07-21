@@ -212,8 +212,8 @@ h1, h2, h3, .brand-name { font-family: 'Quicksand', 'Nunito Sans', sans-serif; }
   padding: 14px; cursor: pointer; color: var(--ink);
   transition: border-color 0.15s, box-shadow 0.15s, transform 0.1s;
 }
-.card:hover { border-color: #C9DBEE; box-shadow: var(--shadow-lift); transform: translateY(-1px); }
-.card.selected { border-color: var(--bright); box-shadow: 0 0 0 2px rgba(69,146,220,0.2); }
+.card:hover { border-color: #C9DBEE; }
+.card.selected { border-color: var(--bright); }
 .card-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 8px; }
 .card-top strong { font-size: 0.92rem; color: var(--nearblack); }
 .card-matter { font-size: 0.82rem; color: var(--muted); margin-bottom: 11px; line-height: 1.4; }
@@ -362,8 +362,7 @@ h1, h2, h3, .brand-name { font-family: 'Quicksand', 'Nunito Sans', sans-serif; }
 /* hero + funnel bars animate their fill */
 .funnel-fill, .chan-fill, .trend-bar { transition: width 0.7s cubic-bezier(0.22,1,0.36,1), height 0.7s cubic-bezier(0.22,1,0.36,1); }
 
-/* lead cards lift a touch more, smoothly */
-.card:hover { transform: translateY(-2px); }
+/* lead cards: no lift or shadow on hover (kept flat) */
 
 /* respect users who prefer no motion */
 @media (prefers-reduced-motion: reduce) {
@@ -375,10 +374,6 @@ h1, h2, h3, .brand-name { font-family: 'Quicksand', 'Nunito Sans', sans-serif; }
 /* hero stat card gets an always-on soft glow ring */
 .stat.hero {
   box-shadow: 0 8px 28px rgba(69,146,220,0.28), 0 0 0 1px rgba(69,146,220,0.15), 0 0 40px rgba(69,146,220,0.25);
-}
-/* cards get a subtle glowing border on hover */
-.stat:hover, .panel-box:hover, .card:hover, .column:hover {
-  box-shadow: var(--shadow-lift), 0 0 0 1px rgba(69,146,220,0.3), 0 0 24px rgba(69,146,220,0.18);
 }
 /* live badge glows gently, always */
 .live-badge { box-shadow: 0 0 16px rgba(46,158,107,0.15); }
