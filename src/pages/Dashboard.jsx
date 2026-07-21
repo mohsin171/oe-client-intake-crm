@@ -88,6 +88,20 @@ export default function Dashboard() {
     return () => clearInterval(t)
   }, [load])
 
+  // Drag-and-drop: move a lead to a new stage (optimistic, then persist).
+  const moveLeadToStage = useCallback(async (leadId, stage) => {
+    setLeads((prev) => prev.map((l) => (l.id === leadId ? { ...l, stage } : l)))
+    try {
+      await fetch('/api/leads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: leadId, action: 'stage', stage }),
+      })
+    } finally {
+      load()
+    }
+  }, [load])
+
   const needsAttention = leads.filter((l) => l.handoff_needed && l.stage === 'handed_off')
   const stageCounts = STAGES.reduce((acc, s) => { acc[s.key] = leads.filter((l) => l.stage === s.key).length; return acc }, {})
 
@@ -155,7 +169,7 @@ export default function Dashboard() {
                 <span className="section-title">Pipeline</span>
                 <span className="section-hint">{filter ? filterLabel(filter) : 'every lead, by stage'}</span>
               </div>
-              <Pipeline leads={leads} loading={loading} selectedId={selectedId} onSelect={setSelectedId} filter={filter} onClearFilter={() => setFilter(null)} />
+              <Pipeline leads={leads} loading={loading} selectedId={selectedId} onSelect={setSelectedId} filter={filter} onClearFilter={() => setFilter(null)} onMove={moveLeadToStage} />
             </div>
           )}
         </main>
@@ -371,7 +385,8 @@ function Appointments({ bookings }) {
   )
 }
 
-function Pipeline({ leads, loading, selectedId, onSelect, filter, onClearFilter }) {
+function Pipeline({ leads, loading, selectedId, onSelect, filter, onClearFilter, onMove }) {
+  const [dragOver, setDragOver] = useState(null)
   if (loading && leads.length === 0) return <div className="pipeline"><div className="pipeline-empty">Loading your pipeline…</div></div>
   if (leads.length === 0) {
     return (
@@ -405,22 +420,38 @@ function Pipeline({ leads, loading, selectedId, onSelect, filter, onClearFilter 
     )
   }
 
-  // Default: even kanban across all stages.
+  // Default: even kanban across all stages, with drag-and-drop between columns.
   return (
     <div className="pipeline">
       {STAGES.map((stage) => {
         const inStage = leads.filter((l) => l.stage === stage.key)
+        const isOver = dragOver === stage.key
         return (
-          <div key={stage.key} className="column">
+          <div
+            key={stage.key}
+            className={'column' + (isOver ? ' drag-over' : '')}
+            onDragOver={(e) => { e.preventDefault(); if (dragOver !== stage.key) setDragOver(stage.key) }}
+            onDragLeave={(e) => { if (e.currentTarget === e.target) setDragOver(null) }}
+            onDrop={(e) => {
+              e.preventDefault()
+              const leadId = e.dataTransfer.getData('text/plain')
+              setDragOver(null)
+              if (leadId && onMove) {
+                const lead = leads.find((l) => l.id === leadId)
+                if (lead && lead.stage !== stage.key) onMove(leadId, stage.key)
+              }
+            }}
+          >
             <div className="column-head">
               <span className={'stage-dot ' + stage.key} />
               {stage.label}
               <span className="count">{inStage.length}</span>
             </div>
             <div className="column-body">
-              {inStage.length === 0 && <div className="column-empty">Nothing here yet</div>}
+              {inStage.length === 0 && <div className="column-empty">{isOver ? 'Drop here' : 'Nothing here yet'}</div>}
               {inStage.map((l) => (
-                <LeadCard key={l.id} lead={l} selected={l.id === selectedId} onClick={() => onSelect(l.id)} />
+                <LeadCard key={l.id} lead={l} selected={l.id === selectedId} onClick={() => onSelect(l.id)}
+                  draggable onDragStart={(e) => { e.dataTransfer.setData('text/plain', l.id); e.dataTransfer.effectAllowed = 'move' }} />
               ))}
             </div>
           </div>
@@ -430,10 +461,11 @@ function Pipeline({ leads, loading, selectedId, onSelect, filter, onClearFilter 
   )
 }
 
-function LeadCard({ lead, selected, onClick }) {
+function LeadCard({ lead, selected, onClick, draggable, onDragStart }) {
   const f = lead.fields || {}
   return (
-    <button className={'card' + (selected ? ' selected' : '')} onClick={onClick}>
+    <button className={'card' + (selected ? ' selected' : '')} onClick={onClick}
+      draggable={draggable} onDragStart={onDragStart}>
       <div className="card-top">
         <strong>{lead.name || 'Unknown visitor'}</strong>
         <QualBadge q={lead.qualification} />
