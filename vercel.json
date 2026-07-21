@@ -8,5 +8,8 @@
   ],
   "functions": {
     "api/chat.js": { "maxDuration": 30 }
-  }
+  },
+  "crons": [
+    { "path": "/api/nudge", "schedule": "0 * * * *" }
+  ]
 }

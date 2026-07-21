@@ -13,6 +13,7 @@
 import { randomUUID } from "node:crypto";
 import { runTurn, isDemoMode, CONFIG } from "../lib/brain.js";
 import { performActions } from "../lib/actions.js";
+import { checkLimits, clientIp, looksLikeSpam } from "../lib/safety.js";
 import {
   ensureSchema, ensureFirm, createPerson, getPerson, updateLead,
   setHandoff, setBooking, addMessage, getHistoryForAI, addEvent, getAvailableSlots,
@@ -49,6 +50,30 @@ export default async function handler(req, res) {
     const sessionId = req.body?.sessionId || randomUUID();
     const firmId = CONFIG.firm.id;
     const channel = "web";
+
+    // Phase 4: rate limiting. Protects the demo and a client's AI bill from abuse.
+    const ip = clientIp(req);
+    const limit = checkLimits(sessionId, ip);
+    if (limit.limited) {
+      const msg = limit.reason === "session_cap"
+        ? "Thanks for chatting. To keep things moving, an adviser will follow up with you directly from here."
+        : "You're sending messages a little quickly. Please give me a moment and try again.";
+      return res.status(429).json({ reply: msg, sessionId, rateLimited: true });
+    }
+
+    // Phase 4: spam floor. Catch obvious junk cheaply, before spending an AI call.
+    if (looksLikeSpam(message)) {
+      await createPerson({ id: sessionId, firmId, channel, source: req.body?.source || "" });
+      await addMessage({ personId: sessionId, firmId, role: "user", channel, content: message });
+      await updateLead(sessionId, {
+        name: "", contact: "", matter: String(message).slice(0, 120), urgency: "low",
+        qualification: "spam", qualification_reason: "Caught by the pre-AI spam floor.",
+      }, { fields: {} });
+      await addEvent({ firmId, personId: sessionId, type: "spam_filtered", detail: "pre-AI spam floor", actor: "system" });
+      const reply = "Thanks for your message. If you have a genuine mortgage enquiry, let me know a little about what you need and I'll be glad to help.";
+      await addMessage({ personId: sessionId, firmId, role: "assistant", channel, content: reply });
+      return res.status(200).json({ reply, sessionId, mode: isDemoMode() ? "demo" : "live" });
+    }
 
     // 1. ensure person + 2. store their message
     await createPerson({ id: sessionId, firmId, channel, source: req.body?.source || "" });

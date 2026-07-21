@@ -281,3 +281,30 @@ export async function getUpcomingBookings(firmId) {
   );
   return rows;
 }
+
+// ---- Phase 4: follow-up nudge ---------------------------------------------
+// Qualified leads who gave a contact, never booked, and have been quiet for a
+// while get exactly ONE gentle nudge. (Sustained nurture is Tool 3's job.)
+export async function getLeadsNeedingNudge(firmId, { quietMinutes = 30, maxAgeHours = 48 } = {}) {
+  const { rows } = await pool.query(
+    `SELECT * FROM people
+     WHERE firm_id = $1
+       AND qualification = 'qualified'
+       AND booking_at IS NULL
+       AND stage NOT IN ('handed_off','won','lost')
+       AND contact <> ''
+       AND (fields->>'nudged') IS NULL
+       AND updated_at < now() - ($2 || ' minutes')::interval
+       AND created_at > now() - ($3 || ' hours')::interval`,
+    [firmId, String(quietMinutes), String(maxAgeHours)]
+  );
+  return rows;
+}
+
+// Mark a person as nudged (so they never get a second one).
+export async function markNudged(id) {
+  await pool.query(
+    `UPDATE people SET fields = jsonb_set(COALESCE(fields,'{}'::jsonb), '{nudged}', to_jsonb(now()::text)), updated_at = now() WHERE id = $1`,
+    [id]
+  );
+}
