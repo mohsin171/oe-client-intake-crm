@@ -81,6 +81,7 @@
     .oe-w-bubble { bottom: 16px; right: 16px; }
     .oe-w-msg { max-width: 90%; }
     .oe-w-brand { font-size: 0.64rem; padding: 6px 4px; }
+    .oe-w-input { font-size: 16px; }
   }
   `;
 
