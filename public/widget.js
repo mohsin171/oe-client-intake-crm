@@ -76,6 +76,12 @@
   .oe-w-time:disabled { opacity: 0.5; cursor: default; }
   .oe-w-book-note { font-size: 0.66rem; color: #9AA6B6; margin-top: 10px; }
   .oe-w-book-empty { font-size: 0.8rem; color: #6a7c93; line-height: 1.4; }
+  @media (max-width: 480px) {
+    .oe-w-panel { left: 12px; right: 12px; width: auto; max-width: none; height: auto; top: auto; bottom: 88px; max-height: calc(100dvh - 108px); border-radius: 18px; }
+    .oe-w-bubble { bottom: 16px; right: 16px; }
+    .oe-w-msg { max-width: 90%; }
+    .oe-w-brand { font-size: 0.64rem; padding: 6px 4px; }
+  }
   `;
 
   function el(tag, cls, html) {
@@ -85,7 +91,7 @@
     return e;
   }
 
-  var root, panel, body, input, sendBtn, promptsRow;
+  var root, panel, body, input, sendBtn, promptsRow, liftKb;
 
   function build() {
     var style = el("style");
@@ -138,6 +144,25 @@
     panel.appendChild(head); panel.appendChild(body); panel.appendChild(promptsRow); panel.appendChild(foot); panel.appendChild(brand);
     root.appendChild(bubble); root.appendChild(panel);
     document.body.appendChild(root);
+
+    // On mobile, keep the panel (and its input) above the on-screen keyboard.
+    liftKb = function () {
+      if (!panel) return;
+      var narrow = window.innerWidth <= 480;
+      var vv = window.visualViewport;
+      if (narrow && open && vv) {
+        var kb = window.innerHeight - vv.height - vv.offsetTop; // approx keyboard height
+        panel.style.bottom = (kb > 40 ? kb + 10 : 88) + "px";
+      } else {
+        panel.style.bottom = "";
+      }
+    };
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener("resize", liftKb);
+      window.visualViewport.addEventListener("scroll", liftKb);
+    }
+    input.addEventListener("focus", function () { setTimeout(liftKb, 100); });
+    input.addEventListener("blur", function () { setTimeout(liftKb, 100); });
   }
 
   function toggle() {
@@ -156,6 +181,7 @@
       addMsg(greeting, "bot");
     }
     if (open) setTimeout(function () { input.focus({ preventScroll: true }); }, 250);
+    if (liftKb) setTimeout(liftKb, 300);
   }
 
   function addMsg(text, who) {
